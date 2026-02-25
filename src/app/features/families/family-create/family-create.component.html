@@ -1,0 +1,72 @@
+<div class="create-container">
+  <div class="create-card">
+    <h1>Créer une famille</h1>
+    <p class="subtitle">Créez un espace familial pour gérer vos finances ensemble</p>
+
+    <form [formGroup]="familyForm" (ngSubmit)="onSubmit()">
+      <!-- Nom -->
+      <div class="form-group">
+        <label for="name">Nom de la famille *</label>
+        <input
+          type="text"
+          id="name"
+          formControlName="name"
+          placeholder="Ex: Famille Dupont"
+          [class.error]="familyForm.get('name')?.invalid && familyForm.get('name')?.touched"
+        />
+        <div class="error-message" *ngIf="familyForm.get('name')?.invalid && familyForm.get('name')?.touched">
+          <span *ngIf="familyForm.get('name')?.errors?.['required']">Le nom est requis</span>
+          <span *ngIf="familyForm.get('name')?.errors?.['minlength']">Minimum 3 caractères</span>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label for="description">Description (optionnel)</label>
+        <textarea
+          id="description"
+          formControlName="description"
+          placeholder="Une courte description de votre famille..."
+          rows="3"
+        ></textarea>
+      </div>
+
+      <!-- Couleur -->
+      <div class="form-group">
+        <label for="color">Couleur</label>
+        <div class="color-picker">
+          <input
+            type="color"
+            id="color"
+            formControlName="color"
+          />
+          <span class="color-value">{{ familyForm.get('color')?.value }}</span>
+        </div>
+        <p class="help-text">Choisissez une couleur pour identifier facilement votre famille</p>
+      </div>
+
+      <!-- Error message -->
+      <div class="alert alert-error" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Actions -->
+      <div class="form-actions">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="cancel()"
+        >
+          Annuler
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="familyForm.invalid || loading"
+        >
+          {{ loading ? 'Création...' : 'Créer la famille' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

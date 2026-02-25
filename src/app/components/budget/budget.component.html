@@ -1,0 +1,100 @@
+<div class="budget-container">
+  <div class="header">
+    <h1>Budgets</h1>
+    <div class="month-selector">
+      <button (click)="previousMonth()" class="btn-nav">←</button>
+      <h2>{{ monthName }} {{ currentYear }}</h2>
+      <button (click)="nextMonth()" class="btn-nav">→</button>
+    </div>
+  </div>
+
+  <div class="summary">
+    <div class="summary-item planned">
+      <span>Budget Planifié:</span>
+      <strong>{{ getTotalPlanned() | number:'1.2-2' }} €</strong>
+    </div>
+    <div class="summary-item actual">
+      <span>Dépensé:</span>
+      <strong>{{ getTotalActual() | number:'1.2-2' }} €</strong>
+    </div>
+    <div class="summary-item remaining" [class.negative]="getTotalRemaining() < 0">
+      <span>Restant:</span>
+      <strong>{{ getTotalRemaining() | number:'1.2-2' }} €</strong>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button (click)="openAddForm()" class="btn-primary">+ Nouveau Budget</button>
+    <button (click)="recalculateBudgets()" class="btn-secondary">🔄 Recalculer</button>
+  </div>
+
+  <!-- Formulaire -->
+  <div *ngIf="showForm" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>{{ editMode ? 'Modifier' : 'Nouveau' }} Budget</h2>
+        <button (click)="closeForm()" class="btn-close">✕</button>
+      </div>
+      <form (ngSubmit)="saveBudget()">
+        <div class="form-group">
+          <label>Catégorie</label>
+          <select [(ngModel)]="currentBudget.categoryId" name="categoryId" required>
+            <option [value]="0">-- Sélectionner --</option>
+            <option *ngFor="let cat of categories" [value]="cat.id">
+              {{ cat.icon }} {{ cat.name }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Montant Planifié (€)</label>
+          <input type="number" [(ngModel)]="currentBudget.plannedAmount" name="plannedAmount" 
+                 step="0.01" min="0" required>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Enregistrer</button>
+          <button type="button" (click)="closeForm()" class="btn-secondary">Annuler</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Liste des budgets -->
+  <div class="budget-list">
+    <div *ngIf="budgets.length === 0" class="empty-state">
+      Aucun budget défini pour ce mois
+    </div>
+
+    <div *ngFor="let budget of budgets" class="budget-item">
+      <div class="budget-icon" [style.color]="budget.category?.color">
+        {{ budget.category?.icon }}
+      </div>
+      <div class="budget-details">
+        <div class="budget-header">
+          <div class="budget-category">{{ budget.category?.name }}</div>
+          <div class="budget-amounts">
+            <span class="actual-amount">{{ budget.actualAmount | number:'1.2-2' }} €</span>
+            <span class="separator">/</span>
+            <span class="planned-amount">{{ budget.plannedAmount | number:'1.2-2' }} €</span>
+          </div>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar" [ngClass]="getProgressBarClass(budget)">
+            <div class="progress-fill" [style.width]="getProgressBarWidth(budget)"></div>
+          </div>
+          <div class="progress-text">{{ budget.completionPercentage | number:'1.0-0' }}%</div>
+        </div>
+        <div class="budget-footer">
+          <span class="remaining-amount" [class.negative]="(budget.remainingAmount || 0) < 0">
+            Restant: {{ budget.remainingAmount | number:'1.2-2' }} €
+          </span>
+        </div>
+      </div>
+      <div class="budget-actions">
+        <button (click)="editBudget(budget)" class="btn-edit">✎</button>
+        <button (click)="deleteBudget(budget.id!)" class="btn-delete">🗑</button>
+      </div>
+    </div>
+  </div>
+</div>

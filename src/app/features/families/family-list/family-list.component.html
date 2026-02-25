@@ -1,0 +1,58 @@
+<div class="family-list-container">
+  <div class="header">
+    <h1>Mes Familles</h1>
+    <button class="btn btn-primary" routerLink="/families/create">
+      + Créer une famille
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    Chargement...
+  </div>
+
+  <div *ngIf="!loading && families.length === 0" class="empty-state">
+    <h2>Aucune famille</h2>
+    <p>Vous n'appartenez à aucune famille pour le moment.</p>
+    <button class="btn btn-primary" routerLink="/families/create">
+      Créer ma première famille
+    </button>
+  </div>
+
+  <div *ngIf="!loading && families.length > 0" class="families-grid">
+    <div 
+      *ngFor="let family of families" 
+      class="family-card"
+      [class.selected]="family.id === selectedFamilyId"
+      (click)="selectFamily(family)"
+    >
+      <div class="family-color" [style.background-color]="family.color"></div>
+      <div class="family-content">
+        <div class="family-header">
+          <h3>{{ family.name }}</h3>
+          <app-role-badge [role]="family.myRole"></app-role-badge>
+        </div>
+        
+        <p class="family-description" *ngIf="family.description">
+          {{ family.description }}
+        </p>
+        
+        <div class="family-footer">
+          <span class="members-count">
+            👥 {{ family.membersCount }} membre{{ family.membersCount > 1 ? 's' : '' }}
+          </span>
+          <button 
+            class="btn-link" 
+            [routerLink]="['/families', family.id]"
+            (click)="$event.stopPropagation()"
+          >
+            Détails →
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-error">
+    {{ errorMessage }}
+  </div>
+</div>

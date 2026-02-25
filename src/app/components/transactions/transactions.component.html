@@ -1,0 +1,144 @@
+<div class="transactions-container">
+  <div class="header">
+    <h1>Transactions</h1>
+    <div class="month-selector">
+      <button (click)="previousMonth()" class="btn-nav">←</button>
+      <h2>{{ monthName }} {{ currentYear }}</h2>
+      <button (click)="nextMonth()" class="btn-nav">→</button>
+    </div>
+  </div>
+
+  <div class="summary">
+    <div class="summary-item income">
+      <span>Revenus:</span>
+      <strong>{{ getTotalIncome() | number:'1.2-2' }} €</strong>
+    </div>
+    <div class="summary-item expense">
+      <span>Dépenses:</span>
+      <strong>{{ getTotalExpense() | number:'1.2-2' }} €</strong>
+    </div>
+    <div class="summary-item balance" [class.negative]="getBalance() < 0">
+      <span>Solde:</span>
+      <strong>{{ getBalance() | number:'1.2-2' }} €</strong>
+    </div>
+  </div>
+
+  <div class="filters-toolbar">
+    <div class="filters-group">
+      <div class="filter-item">
+        <label>Type:</label>
+        <select [(ngModel)]="filterType" (change)="onFilterChange()" class="filter-select">
+          <option value="ALL">Tous</option>
+          <option [value]="CategoryType.INCOME">Revenus</option>
+          <option [value]="CategoryType.EXPENSE">Dépenses</option>
+        </select>
+      </div>
+
+      <div class="filter-item">
+        <label>Catégorie:</label>
+        <select [(ngModel)]="filterCategoryId" (change)="onFilterChange()" class="filter-select">
+          <option value="ALL">Toutes</option>
+          <option *ngFor="let cat of categories" [value]="cat.id">
+            {{ cat.icon }} {{ cat.name }}
+          </option>
+        </select>
+      </div>
+
+      <button (click)="resetFilters()" class="btn-reset">🔄 Réinitialiser</button>
+    </div>
+
+    <button (click)="openAddForm()" class="btn-primary">+ Nouvelle Transaction</button>
+  </div>
+
+  <!-- Formulaire -->
+  <div *ngIf="showForm" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>{{ editMode ? 'Modifier' : 'Nouvelle' }} Transaction</h2>
+        <button (click)="closeForm()" class="btn-close">✕</button>
+      </div>
+      <form (ngSubmit)="saveTransaction()">
+        <div class="form-group">
+          <label>Type</label>
+          <select [(ngModel)]="currentTransaction.type" name="type" required>
+            <option [value]="CategoryType.INCOME">Revenu</option>
+            <option [value]="CategoryType.EXPENSE">Dépense</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Catégorie</label>
+          <select [(ngModel)]="currentTransaction.categoryId" name="categoryId" required>
+            <option [value]="0">-- Sélectionner --</option>
+            <option *ngFor="let cat of getFilteredCategories()" [value]="cat.id">
+              {{ cat.icon }} {{ cat.name }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Membre de la famille</label>
+          <select [(ngModel)]="currentTransaction.familyMemberId" name="familyMemberId">
+            <option [value]="undefined">-- Non spécifié --</option>
+            <option *ngFor="let member of members" [value]="member.id">
+              {{ member.fullName }}{{ member.nickname ? ' (' + member.nickname + ')' : '' }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" [(ngModel)]="currentTransaction.description" name="description" required>
+        </div>
+
+        <div class="form-group">
+          <label>Montant (€)</label>
+          <input type="number" [(ngModel)]="currentTransaction.amount" name="amount" 
+                 step="0.01" min="0" required>
+        </div>
+
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" [(ngModel)]="currentTransaction.date" name="date" required>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Enregistrer</button>
+          <button type="button" (click)="closeForm()" class="btn-secondary">Annuler</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Liste des transactions -->
+  <div class="transactions-list">
+    <div *ngIf="filteredTransactions.length === 0" class="empty-state">
+      {{ transactions.length === 0 ? 'Aucune transaction pour ce mois' : 'Aucune transaction ne correspond aux filtres' }}
+    </div>
+
+    <div *ngFor="let transaction of filteredTransactions" class="transaction-item" 
+         [class.income]="transaction.type === CategoryType.INCOME"
+         [class.expense]="transaction.type === CategoryType.EXPENSE">
+      <div class="transaction-icon" [style.color]="transaction.category?.color">
+        {{ transaction.categoryIcon || transaction.category?.icon }}
+      </div>
+      <div class="transaction-details">
+        <div class="transaction-description">{{ transaction.description }}</div>
+        <div class="transaction-category">{{ transaction.categoryName || transaction.category?.name }}</div>
+        <div *ngIf="transaction.memberName || transaction.familyMember" class="transaction-member">
+          👤 {{ transaction.memberName || transaction.familyMember?.nickname || transaction.familyMember?.fullName }}
+        </div>
+        <div class="transaction-date">{{ transaction.date | date:'dd/MM/yyyy' }}</div>
+      </div>
+      <div class="transaction-amount" 
+           [class.positive]="transaction.type === CategoryType.INCOME"
+           [class.negative]="transaction.type === CategoryType.EXPENSE">
+        {{ transaction.type === CategoryType.INCOME ? '+' : '-' }}{{ transaction.amount | number:'1.2-2' }} €
+      </div>
+      <div class="transaction-actions">
+        <button (click)="editTransaction(transaction)" class="btn-edit">✎</button>
+        <button (click)="deleteTransaction(transaction.id!)" class="btn-delete">🗑</button>
+      </div>
+    </div>
+  </div>
+</div>

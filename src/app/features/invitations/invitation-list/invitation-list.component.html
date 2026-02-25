@@ -1,0 +1,120 @@
+<div class="invitation-container">
+  <div class="header">
+    <h1>Invitations</h1>
+    <button class="btn btn-primary" routerLink="/invitations/send">
+      + Envoyer une invitation
+    </button>
+  </div>
+
+  <!-- Invitations reçues -->
+  <div class="section">
+    <h2>Invitations reçues</h2>
+    
+    <div *ngIf="loadingReceived" class="loading">Chargement...</div>
+
+    <div *ngIf="!loadingReceived && receivedInvitations.length === 0" class="empty-state">
+      Aucune invitation reçue
+    </div>
+
+    <div *ngIf="!loadingReceived && receivedInvitations.length > 0" class="invitations-list">
+      <div *ngFor="let invitation of receivedInvitations" class="invitation-card">
+        <div class="invitation-header">
+          <div class="invitation-info">
+            <h3>{{ invitation.familyName }}</h3>
+            <p class="invitation-from">
+              Invité par <strong>{{ invitation.invitedBy }}</strong>
+            </p>
+          </div>
+          <span 
+            class="status-badge" 
+            [class.status-pending]="invitation.status === 'PENDING'"
+            [class.status-accepted]="invitation.status === 'ACCEPTED'"
+            [class.status-declined]="invitation.status === 'DECLINED'"
+            [class.status-expired]="invitation.status === 'EXPIRED'"
+          >
+            {{ getStatusLabel(invitation.status) }}
+          </span>
+        </div>
+
+        <div class="invitation-body">
+          <p class="proposed-role">Rôle proposé: <strong>{{ invitation.proposedRole }}</strong></p>
+          <p class="message" *ngIf="invitation.message">{{ invitation.message }}</p>
+          <p class="date">Expire le: {{ formatDate(invitation.expiresAt) }}</p>
+        </div>
+
+        <div class="invitation-actions" *ngIf="invitation.status === 'PENDING'">
+          <button 
+            class="btn btn-success"
+            (click)="acceptInvitation(invitation)"
+            [disabled]="processingInvitation"
+          >
+            ✓ Accepter
+          </button>
+          <button 
+            class="btn btn-danger"
+            (click)="declineInvitation(invitation)"
+            [disabled]="processingInvitation"
+          >
+            ✗ Refuser
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invitations envoyées -->
+  <div class="section">
+    <h2>Invitations envoyées</h2>
+    
+    <div *ngIf="loadingSent" class="loading">Chargement...</div>
+
+    <div *ngIf="!loadingSent && sentInvitations.length === 0" class="empty-state">
+      Aucune invitation envoyée
+    </div>
+
+    <div *ngIf="!loadingSent && sentInvitations.length > 0" class="invitations-list">
+      <div *ngFor="let invitation of sentInvitations" class="invitation-card">
+        <div class="invitation-header">
+          <div class="invitation-info">
+            <h3>{{ invitation.familyName }}</h3>
+            <p class="invitation-to">À: <strong>{{ invitation.email }}</strong></p>
+          </div>
+          <span 
+            class="status-badge"
+            [class.status-pending]="invitation.status === 'PENDING'"
+            [class.status-accepted]="invitation.status === 'ACCEPTED'"
+            [class.status-declined]="invitation.status === 'DECLINED'"
+            [class.status-expired]="invitation.status === 'EXPIRED'"
+            [class.status-cancelled]="invitation.status === 'CANCELLED'"
+          >
+            {{ getStatusLabel(invitation.status) }}
+          </span>
+        </div>
+
+        <div class="invitation-body">
+          <p class="proposed-role">Rôle: {{ invitation.proposedRole }}</p>
+          <p class="date">Envoyée le: {{ formatDate(invitation.createdAt) }}</p>
+          <p class="date">Expire le: {{ formatDate(invitation.expiresAt) }}</p>
+        </div>
+
+        <div class="invitation-actions" *ngIf="invitation.status === 'PENDING'">
+          <button 
+            class="btn btn-secondary btn-sm"
+            (click)="cancelInvitation(invitation)"
+            [disabled]="processingInvitation"
+          >
+            Annuler
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div class="alert alert-success" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+  <div class="alert alert-error" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+</div>

@@ -1,0 +1,134 @@
+<div class="categories-container">
+  <div class="header">
+    <h1>Catégories</h1>
+  </div>
+
+  <div class="summary">
+    <div class="summary-item income">
+      <span>Catégories de Revenus:</span>
+      <strong>{{ getIncomeCount() }}</strong>
+    </div>
+    <div class="summary-item expense">
+      <span>Catégories de Dépenses:</span>
+      <strong>{{ getExpenseCount() }}</strong>
+    </div>
+    <div class="summary-item total">
+      <span>Total:</span>
+      <strong>{{ categories.length }}</strong>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="filter-group">
+      <label>Filtrer par type:</label>
+      <select [(ngModel)]="filterType" (change)="onFilterChange()" class="filter-select">
+        <option value="ALL">Toutes</option>
+        <option [value]="CategoryType.INCOME">Revenus</option>
+        <option [value]="CategoryType.EXPENSE">Dépenses</option>
+      </select>
+    </div>
+    <button (click)="openAddForm()" class="btn-primary">+ Nouvelle Catégorie</button>
+  </div>
+
+  <!-- Formulaire -->
+  <div *ngIf="showForm" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>{{ editMode ? 'Modifier' : 'Nouvelle' }} Catégorie</h2>
+        <button (click)="closeForm()" class="btn-close">✕</button>
+      </div>
+      <form (ngSubmit)="saveCategory()">
+        <div class="form-group">
+          <label>Nom</label>
+          <input type="text" [(ngModel)]="currentCategory.name" name="name" required 
+                 placeholder="Ex: Alimentation, Salaire...">
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" [(ngModel)]="currentCategory.description" name="description"
+                 placeholder="Description optionnelle">
+        </div>
+
+        <div class="form-group">
+          <label>Type</label>
+          <select [(ngModel)]="currentCategory.type" name="type" required>
+            <option [value]="CategoryType.INCOME">Revenu</option>
+            <option [value]="CategoryType.EXPENSE">Dépense</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Ordre d'affichage</label>
+          <input type="number" [(ngModel)]="currentCategory.displayOrder" name="displayOrder" 
+                 min="0" step="1" placeholder="0"
+                 title="Définit l'ordre d'affichage (0 = premier)">
+        </div>
+
+        <div class="form-group">
+          <label>Icône: {{ currentCategory.icon }}</label>
+          <div class="icon-picker">
+            <div *ngFor="let icon of commonIcons" 
+                 class="icon-option"
+                 [class.selected]="currentCategory.icon === icon"
+                 (click)="selectIcon(icon)">
+              {{ icon }}
+            </div>
+          </div>
+          <input type="text" [(ngModel)]="currentCategory.icon" name="icon" 
+                 placeholder="Ou entrez un emoji personnalisé"
+                 class="icon-input">
+        </div>
+
+        <div class="form-group">
+          <label>Couleur</label>
+          <div class="color-picker">
+            <div *ngFor="let color of commonColors" 
+                 class="color-option"
+                 [style.background-color]="color"
+                 [class.selected]="currentCategory.color === color"
+                 (click)="selectColor(color)">
+            </div>
+          </div>
+          <input type="color" [(ngModel)]="currentCategory.color" name="color" 
+                 class="color-input">
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Enregistrer</button>
+          <button type="button" (click)="closeForm()" class="btn-secondary">Annuler</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Liste des catégories -->
+  <div class="categories-list">
+    <div *ngIf="filteredCategories.length === 0" class="empty-state">
+      Aucune catégorie trouvée
+    </div>
+
+    <div class="categories-grid">
+      <div *ngFor="let category of filteredCategories" class="category-card">
+        <div class="card-header" [style.background-color]="category.color">
+          <div class="category-icon">{{ category.icon }}</div>
+        </div>
+        <div class="card-body">
+          <h3 class="category-name">{{ category.name }}</h3>
+          <p class="category-description" *ngIf="category.description">
+            {{ category.description }}
+          </p>
+          <div class="category-type" 
+               [class.income-badge]="category.type === CategoryType.INCOME"
+               [class.expense-badge]="category.type === CategoryType.EXPENSE">
+            {{ category.type === CategoryType.INCOME ? 'Revenu' : 'Dépense' }}
+          </div>
+        </div>
+        <div class="card-actions">
+          <button (click)="editCategory(category)" class="btn-edit">✎ Modifier</button>
+          <button (click)="deleteCategory(category.id!)" class="btn-delete">🗑 Supprimer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

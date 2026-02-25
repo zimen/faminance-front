@@ -1,0 +1,151 @@
+<div class="profile-container">
+  <div class="profile-header">
+    <h1>Mon Profil</h1>
+    <button class="btn btn-secondary" (click)="logout()">
+      Déconnexion
+    </button>
+  </div>
+
+  <div *ngIf="currentUser" class="profile-content">
+    <!-- Informations du profil -->
+    <div class="profile-card">
+      <h2>Informations personnelles</h2>
+      
+      <form [formGroup]="profileForm" (ngSubmit)="onUpdateProfile()">
+        <div class="form-group">
+          <label for="username">Nom d'utilisateur</label>
+          <input
+            type="text"
+            id="username"
+            formControlName="username"
+            [class.error]="profileForm.get('username')?.invalid && profileForm.get('username')?.touched"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            formControlName="email"
+            [class.error]="profileForm.get('email')?.invalid && profileForm.get('email')?.touched"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="firstName">Prénom</label>
+          <input
+            type="text"
+            id="firstName"
+            formControlName="firstName"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="lastName">Nom</label>
+          <input
+            type="text"
+            id="lastName"
+            formControlName="lastName"
+          />
+        </div>
+
+        <div class="alert alert-success" *ngIf="successMessage">
+          {{ successMessage }}
+        </div>
+
+        <div class="alert alert-error" *ngIf="errorMessage">
+          {{ errorMessage }}
+        </div>
+
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="profileForm.invalid || loadingProfile"
+        >
+          {{ loadingProfile ? 'Mise à jour...' : 'Mettre à jour' }}
+        </button>
+      </form>
+    </div>
+
+    <!-- Changement de mot de passe -->
+    <div class="profile-card">
+      <h2>Changer le mot de passe</h2>
+      
+      <form [formGroup]="passwordForm" (ngSubmit)="onChangePassword()">
+        <div class="form-group">
+          <label for="currentPassword">Mot de passe actuel</label>
+          <input
+            type="password"
+            id="currentPassword"
+            formControlName="currentPassword"
+            [class.error]="passwordForm.get('currentPassword')?.invalid && passwordForm.get('currentPassword')?.touched"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="newPassword">Nouveau mot de passe</label>
+          <input
+            type="password"
+            id="newPassword"
+            formControlName="newPassword"
+            [class.error]="passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched"
+          />
+          <div class="error-message" *ngIf="passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched">
+            Minimum 6 caractères
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="confirmNewPassword">Confirmer le nouveau mot de passe</label>
+          <input
+            type="password"
+            id="confirmNewPassword"
+            formControlName="confirmNewPassword"
+            [class.error]="passwordForm.get('confirmNewPassword')?.invalid && passwordForm.get('confirmNewPassword')?.touched"
+          />
+          <div class="error-message" *ngIf="passwordForm.errors?.['passwordMismatch'] && passwordForm.get('confirmNewPassword')?.touched">
+            Les mots de passe ne correspondent pas
+          </div>
+        </div>
+
+        <div class="alert alert-success" *ngIf="passwordSuccessMessage">
+          {{ passwordSuccessMessage }}
+        </div>
+
+        <div class="alert alert-error" *ngIf="passwordErrorMessage">
+          {{ passwordErrorMessage }}
+        </div>
+
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="passwordForm.invalid || loadingPassword"
+        >
+          {{ loadingPassword ? 'Mise à jour...' : 'Changer le mot de passe' }}
+        </button>
+      </form>
+    </div>
+
+    <!-- Informations compte -->
+    <div class="profile-card">
+      <h2>Informations du compte</h2>
+      <div class="info-row">
+        <span class="label">Statut:</span>
+        <span class="value">
+          <span class="badge" [class.badge-success]="currentUser.active" [class.badge-error]="!currentUser.active">
+            {{ currentUser.active ? 'Actif' : 'Inactif' }}
+          </span>
+        </span>
+      </div>
+      <div class="info-row">
+        <span class="label">Email vérifié:</span>
+        <span class="value">
+          <span class="badge" [class.badge-success]="currentUser.emailVerified" [class.badge-warning]="!currentUser.emailVerified">
+            {{ currentUser.emailVerified ? 'Oui' : 'Non' }}
+          </span>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>

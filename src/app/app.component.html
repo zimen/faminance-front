@@ -1,0 +1,34 @@
+<div class="app-container">
+  <!-- Navigation (masquée sur les pages auth) -->
+  <nav class="navbar" *ngIf="isAuthenticated && !isAuthRoute()">
+    <div class="nav-brand">
+      <h1>💰 {{ title }}</h1>
+    </div>
+    <div class="nav-links">
+      <a routerLink="/families" routerLinkActive="active">Familles</a>
+      <a routerLink="/dashboard" routerLinkActive="active">Tableau de Bord</a>
+      <a routerLink="/transactions" routerLinkActive="active">Transactions</a>
+      <a routerLink="/budgets" routerLinkActive="active">Budgets</a>
+      <a routerLink="/categories" routerLinkActive="active">Catégories</a>
+      <a routerLink="/invitations" routerLinkActive="active">Invitations</a>
+    </div>
+    <div class="nav-user">
+      <span class="user-name" *ngIf="currentUser">{{ currentUser.username }}</span>
+      <button class="btn-profile" routerLink="/profile">👤</button>
+      <button class="btn-logout" (click)="logout()">Déconnexion</button>
+    </div>
+  </nav>
+
+  <!-- Family Selector (affiché uniquement si authentifié et pas sur auth) -->
+  <app-family-selector *ngIf="isAuthenticated && !isAuthRoute()"></app-family-selector>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Footer (masqué sur les pages auth) -->
+  <footer class="footer" *ngIf="!isAuthRoute()">
+    <p>&copy; 2026 Family Finance - Gestion financière familiale</p>
+  </footer>
+</div>

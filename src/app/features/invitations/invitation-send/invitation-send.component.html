@@ -1,0 +1,81 @@
+<div class="send-container">
+  <div class="send-card">
+    <h1>Envoyer une invitation</h1>
+    <p class="subtitle">Invitez un membre à rejoindre votre famille</p>
+
+    <form [formGroup]="invitationForm" (ngSubmit)="onSubmit()">
+      <!-- Famille -->
+      <div class="form-group">
+        <label for="familyId">Famille *</label>
+        <select id="familyId" formControlName="familyId">
+          <option value="">Sélectionner une famille</option>
+          <option *ngFor="let family of families" [value]="family.id">
+            {{ family.name }} ({{ family.myRole }})
+          </option>
+        </select>
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label for="email">Email *</label>
+        <input
+          type="email"
+          id="email"
+          formControlName="email"
+          placeholder="email@exemple.com"
+          [class.error]="invitationForm.get('email')?.invalid && invitationForm.get('email')?.touched"
+        />
+        <div class="error-message" *ngIf="invitationForm.get('email')?.invalid && invitationForm.get('email')?.touched">
+          Email invalide
+        </div>
+      </div>
+
+      <!-- Rôle -->
+      <div class="form-group">
+        <label for="proposedRole">Rôle proposé *</label>
+        <select id="proposedRole" formControlName="proposedRole">
+          <option value="MEMBER">Membre</option>
+          <option value="PARENT">Parent</option>
+          <option value="ADMIN" *ngIf="canAssignAdmin()">Admin</option>
+        </select>
+        <p class="help-text">
+          Les membres peuvent voir les transactions. Les parents peuvent gérer budgets et invitations. Les admins ont tous les droits.
+        </p>
+      </div>
+
+      <!-- Message -->
+      <div class="form-group">
+        <label for="message">Message (optionnel)</label>
+        <textarea
+          id="message"
+          formControlName="message"
+          placeholder="Un message personnalisé..."
+          rows="3"
+        ></textarea>
+      </div>
+
+      <!-- Error message -->
+      <div class="alert alert-error" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Actions -->
+      <div class="form-actions">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="cancel()"
+        >
+          Annuler
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="invitationForm.invalid || loading"
+        >
+          {{ loading ? 'Envoi...' : 'Envoyer l\'invitation' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

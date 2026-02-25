@@ -1,0 +1,111 @@
+<div class="detail-container" *ngIf="family">
+  <!-- Header -->
+  <div class="header">
+    <button class="btn-back" (click)="goBack()">← Retour</button>
+    <div class="header-content">
+      <div class="family-color-bar" [style.background-color]="family.color"></div>
+      <h1>{{ family.name }}</h1>
+      <app-role-badge [role]="family.myRole"></app-role-badge>
+    </div>
+    <p class="description" *ngIf="family.description">{{ family.description }}</p>
+  </div>
+
+  <!-- Membres -->
+  <div class="section">
+    <div class="section-header">
+      <h2>Membres ({{ members.length }})</h2>
+      <button 
+        *ngIf="canInvite()" 
+        class="btn btn-primary btn-sm" 
+        routerLink="/invitations/send"
+        [queryParams]="{ familyId: family.id }"
+      >
+        + Inviter
+      </button>
+    </div>
+
+    <div *ngIf="loadingMembers" class="loading">
+      Chargement des membres...
+    </div>
+
+    <div *ngIf="!loadingMembers" class="members-list">
+      <div *ngFor="let member of members" class="member-card">
+        <app-member-avatar
+          [name]="member.fullName || member.username"
+          [avatarUrl]="member.avatarUrl"
+          [color]="member.color"
+          [size]="48"
+        ></app-member-avatar>
+        
+        <div class="member-info">
+          <div class="member-name">
+            {{ member.fullName || member.username }}
+            <span class="nickname" *ngIf="member.nickname">({{ member.nickname }})</span>
+          </div>
+          <div class="member-username">{{ member.username }}</div>
+        </div>
+
+        <app-role-badge [role]="member.role"></app-role-badge>
+
+        <div class="member-actions" *ngIf="canManageMembers()">
+          <button 
+            class="btn-icon" 
+            (click)="changeRole(member)"
+            title="Changer le rôle"
+            *ngIf="family.myRole === 'ADMIN' && member.userId !== currentUserId"
+          >
+            ⚙️
+          </button>
+          <button 
+            class="btn-icon btn-danger" 
+            (click)="removeMember(member)"
+            title="Retirer de la famille"
+            *ngIf="member.userId !== currentUserId"
+          >
+            🗑️
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Paramètres -->
+  <div class="section" *ngIf="isAdmin()">
+    <div class="section-header">
+      <h2>Paramètres</h2>
+    </div>
+
+    <div class="settings-card">
+      <button class="btn btn-secondary" (click)="editFamily()">
+        ✏️ Modifier la famille
+      </button>
+      <button class="btn btn-danger" (click)="deleteFamily()">
+        🗑️ Supprimer la famille
+      </button>
+    </div>
+  </div>
+
+  <!-- Quitter la famille -->
+  <div class="section" *ngIf="!isAdmin()">
+    <button class="btn btn-warning" (click)="leaveFamily()">
+      Quitter la famille
+    </button>
+  </div>
+
+  <!-- Messages -->
+  <div class="alert alert-success" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+  <div class="alert alert-error" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+</div>
+
+<div class="detail-container" *ngIf="!family && !loading">
+  <div class="error-state">
+    <h2>Famille non trouvée</h2>
+    <button class="btn btn-primary" routerLink="/families">
+      Retour à mes familles
+    </button>
+  </div>
+</div>
