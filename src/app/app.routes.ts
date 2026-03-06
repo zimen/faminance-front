@@ -1,10 +1,19 @@
 import { Routes } from '@angular/router';
 import { authGuard, parentGuard } from './core/guards';
+import { onboardingGuard } from './core/guards/onboarding.guard';
+import { onboardingCompleteGuard } from './core/guards/onboarding-complete.guard';
 
 // Auth Components
 import { LoginComponent } from './features/auth/login/login.component';
 import { RegisterComponent } from './features/auth/register/register.component';
 import { ProfileComponent } from './features/auth/profile/profile.component';
+
+// Onboarding Components
+import { Step1RegisterComponent } from './features/onboarding/step1-register/step1-register.component';
+import { Step2FamilySetupComponent } from './features/onboarding/step2-family-setup/step2-family-setup.component';
+import { Step3CategoriesComponent } from './features/onboarding/step3-categories/step3-categories.component';
+import { Step4FirstTransactionComponent } from './features/onboarding/step4-first-transaction/step4-first-transaction.component';
+import { OnboardingCompleteComponent } from './features/onboarding/onboarding-complete/onboarding-complete.component';
 
 // Family Components
 import { FamilyListComponent } from './features/families/family-list/family-list.component';
@@ -20,11 +29,42 @@ import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { TransactionsComponent } from './components/transactions/transactions.component';
 import { BudgetComponent } from './components/budget/budget.component';
 import { CategoriesComponent } from './components/categories/categories.component';
+import { BudgetTemplateComponent } from './components/budget-template/budget-template.component';
 
 export const routes: Routes = [
   // Redirect root to login
   { path: '', redirectTo: '/auth/login', pathMatch: 'full' },
   
+  // Onboarding routes (protected by onboardingGuard - redirect if already completed)
+  {
+    path: 'onboarding',
+    canActivate: [onboardingGuard],
+    children: [
+      { path: 'register', component: Step1RegisterComponent },
+      { 
+        path: 'family-setup', 
+        component: Step2FamilySetupComponent,
+        canActivate: [authGuard] // Must be authenticated
+      },
+      { 
+        path: 'categories', 
+        component: Step3CategoriesComponent,
+        canActivate: [authGuard] // Must be authenticated
+      },
+      { 
+        path: 'first-transaction', 
+        component: Step4FirstTransactionComponent,
+        canActivate: [authGuard] // Must be authenticated
+      },
+      { 
+        path: 'complete', 
+        component: OnboardingCompleteComponent,
+        canActivate: [authGuard] // Must be authenticated
+      },
+      { path: '', redirectTo: 'register', pathMatch: 'full' }
+    ]
+  },
+
   // Auth routes (public)
   {
     path: 'auth',
@@ -34,10 +74,10 @@ export const routes: Routes = [
     ]
   },
 
-  // Protected routes (require authentication)
+  // Protected routes (require authentication + onboarding completion)
   {
     path: '',
-    canActivate: [authGuard],
+    canActivate: [authGuard, onboardingCompleteGuard],
     children: [
       // Profile
       { path: 'profile', component: ProfileComponent },
@@ -62,6 +102,11 @@ export const routes: Routes = [
         path: 'budgets', 
         component: BudgetComponent,
         canActivate: [parentGuard] // Only PARENT and ADMIN can manage budgets
+      },
+      { 
+        path: 'budget-templates', 
+        component: BudgetTemplateComponent,
+        canActivate: [parentGuard] // Only PARENT and ADMIN can manage budget templates
       },
       { 
         path: 'categories', 

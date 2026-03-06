@@ -1,0 +1,98 @@
+<div class="onboarding-container">
+  <!-- Barre de progression -->
+  <div class="progress-bar">
+    <div class="progress-fill" [style.width.%]="getProgress()"></div>
+  </div>
+
+  <!-- En-tête -->
+  <div class="header">
+    <h1>Créons votre famille 👨‍👩‍👧‍👦</h1>
+    <p class="subtitle">Quelques informations pour personnaliser votre expérience</p>
+    <div class="steps-indicator">
+      <span class="step completed">✓</span>
+      <span class="separator">•</span>
+      <span class="step active">2</span>
+      <span class="separator">•</span>
+      <span class="step">3</span>
+      <span class="separator">•</span>
+      <span class="step">4</span>
+    </div>
+  </div>
+
+  <!-- Formulaire -->
+  <div class="form-container">
+    <form [formGroup]="familyForm" (ngSubmit)="onSubmit()">
+      <!-- Prénom -->
+      <div class="form-group">
+        <label for="firstName">Votre prénom</label>
+        <input
+          id="firstName"
+          type="text"
+          formControlName="firstName"
+          placeholder="ex: Marie"
+          [class.error]="familyForm.get('firstName')?.invalid && familyForm.get('firstName')?.touched"
+        />
+        <div class="error-message" *ngIf="familyForm.get('firstName')?.invalid && familyForm.get('firstName')?.touched">
+          <span *ngIf="familyForm.get('firstName')?.errors?.['required']">Le prénom est requis</span>
+          <span *ngIf="familyForm.get('firstName')?.errors?.['minlength']">Minimum 2 caractères</span>
+        </div>
+      </div>
+
+      <!-- Nom de famille -->
+      <div class="form-group">
+        <label for="familyName">Nom de votre famille</label>
+        <input
+          id="familyName"
+          type="text"
+          formControlName="familyName"
+          placeholder="ex: Les Dupont, La famille Martin..."
+          [class.error]="familyForm.get('familyName')?.invalid && familyForm.get('familyName')?.touched"
+        />
+        <div class="help-text">Ce nom apparaîtra dans l'application</div>
+        <div class="error-message" *ngIf="familyForm.get('familyName')?.invalid && familyForm.get('familyName')?.touched">
+          <span *ngIf="familyForm.get('familyName')?.errors?.['required']">Le nom de famille est requis</span>
+          <span *ngIf="familyForm.get('familyName')?.errors?.['minlength']">Minimum 2 caractères</span>
+        </div>
+      </div>
+
+      <!-- Surnom (optionnel) -->
+      <div class="form-group">
+        <label for="nickname">Votre surnom (optionnel)</label>
+        <input
+          id="nickname"
+          type="text"
+          formControlName="nickname"
+          placeholder="ex: Maman, Papa..."
+        />
+        <div class="help-text">Comment les autres membres pourront vous identifier</div>
+      </div>
+
+      <!-- Message d'erreur global -->
+      <div class="alert alert-error" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Boutons -->
+      <div class="button-group">
+        <button type="button" class="btn-secondary" (click)="onBack()" [disabled]="loading">
+          ← Retour
+        </button>
+        <button type="submit" class="btn-primary" [disabled]="loading || familyForm.invalid">
+          {{ loading ? 'Création...' : 'Continuer' }}
+        </button>
+      </div>
+    </form>
+
+    <!-- Info card -->
+    <div class="info-card">
+      <div class="info-icon">💡</div>
+      <div class="info-text">
+        <strong>Pourquoi ces informations ?</strong>
+        <p>
+          Elles permettent de personnaliser votre espace familial et de faciliter la 
+          collaboration avec les autres membres.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

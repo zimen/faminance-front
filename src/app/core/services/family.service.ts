@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap, catchError, throwError } from 'rxjs';
-import { Family, FamilyMember, FamilyRequest, FamilyRole } from '../models';
+import { Family, FamilyMember, FamilyRequest, FamilyRole, FamilyQuickSetupRequest, FamilyQuickSetupResponse } from '../models';
 import { StorageService } from './storage.service';
 import { environment } from '../../../environments/environment';
 
@@ -63,6 +63,24 @@ export class FamilyService {
         }),
         catchError(error => {
           console.error('Erreur lors de la création de la famille:', error);
+          return throwError(() => error);
+        })
+      );
+  }
+
+  /**
+   * Crée une famille avec le premier membre (utilisateur actuel)
+   * Endpoint spécifique pour l'onboarding
+   */
+  createFamilyWithMember(request: FamilyQuickSetupRequest): Observable<FamilyQuickSetupResponse> {
+    return this.http.post<FamilyQuickSetupResponse>(`${this.API_URL}/quick-setup`, request)
+      .pipe(
+        tap(response => {
+          // Sélectionner automatiquement la nouvelle famille
+          this.selectFamily(response.family);
+        }),
+        catchError(error => {
+          console.error('Erreur lors de la création rapide de la famille:', error);
           return throwError(() => error);
         })
       );

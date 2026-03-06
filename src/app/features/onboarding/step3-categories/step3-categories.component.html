@@ -1,0 +1,78 @@
+<div class="onboarding-container">
+  <!-- Barre de progression -->
+  <div class="progress-bar">
+    <div class="progress-fill" [style.width.%]="getProgress()"></div>
+  </div>
+
+  <!-- En-tête -->
+  <div class="header">
+    <h1>Vos catégories 📊</h1>
+    <p class="subtitle">Sélectionnez les catégories qui vous intéressent</p>
+    <div class="steps-indicator">
+      <span class="step completed">✓</span>
+      <span class="separator">•</span>
+      <span class="step completed">✓</span>
+      <span class="separator">•</span>
+      <span class="step active">3</span>
+      <span class="separator">•</span>
+      <span class="step">4</span>
+    </div>
+  </div>
+
+  <!-- Formulaire -->
+  <div class="form-container">
+    <!-- Compteur de sélection -->
+    <div class="selection-counter">
+      <span class="counter-badge">{{ getSelectedCount() }}</span>
+      <span class="counter-text">catégorie{{ getSelectedCount() > 1 ? 's' : '' }} sélectionnée{{ getSelectedCount() > 1 ? 's' : '' }}</span>
+    </div>
+
+    <!-- Spinner de chargement -->
+    <div class="loading-spinner" *ngIf="loading && categories.length === 0">
+      <div class="spinner"></div>
+      <p>Chargement des catégories...</p>
+    </div>
+
+    <!-- Liste de catégories -->
+    <div class="categories-grid" *ngIf="!loading || categories.length > 0">
+      <div
+        *ngFor="let category of categories"
+        class="category-card"
+        [class.selected]="category.selected"
+        [class.income]="category.type === 'INCOME'"
+        (click)="toggleCategory(category)"
+      >
+        <div class="category-icon">{{ category.icon }}</div>
+        <div class="category-name">{{ category.name }}</div>
+        <div class="category-type-badge" *ngIf="category.type === 'INCOME'">Revenu</div>
+        <div class="checkmark" *ngIf="category.selected">✓</div>
+      </div>
+    </div>
+
+    <!-- Message d'erreur -->
+    <div class="alert alert-error" *ngIf="errorMessage">
+      {{ errorMessage }}
+    </div>
+
+    <!-- Info card -->
+    <div class="info-card">
+      <div class="info-icon">💡</div>
+      <div class="info-text">
+        Vous pourrez ajouter, modifier ou supprimer des catégories à tout moment depuis les paramètres.
+      </div>
+    </div>
+
+    <!-- Boutons -->
+    <div class="button-group">
+      <button type="button" class="btn-secondary" (click)="onBack()" [disabled]="loading">
+        ← Retour
+      </button>
+      <button type="button" class="btn-link" (click)="onSkip()" [disabled]="loading">
+        Passer
+      </button>
+      <button type="button" class="btn-primary" (click)="onSubmit()" [disabled]="loading || getSelectedCount() === 0">
+        {{ loading ? 'Ajout...' : 'Continuer (' + getSelectedCount() + ')' }}
+      </button>
+    </div>
+  </div>
+</div>

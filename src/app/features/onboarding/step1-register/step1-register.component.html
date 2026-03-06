@@ -1,0 +1,119 @@
+<div class="onboarding-container">
+  <!-- Barre de progression -->
+  <div class="progress-bar">
+    <div class="progress-fill" [style.width.%]="getProgress()"></div>
+  </div>
+
+  <!-- En-tête -->
+  <div class="header">
+    <h1>Bienvenue sur Family Finance ! 👋</h1>
+    <p class="subtitle">Créez votre compte en quelques secondes</p>
+    <div class="steps-indicator">
+      <span class="step active">1</span>
+      <span class="separator">•</span>
+      <span class="step">2</span>
+      <span class="separator">•</span>
+      <span class="step">3</span>
+      <span class="separator">•</span>
+      <span class="step">4</span>
+    </div>
+  </div>
+
+  <!-- Formulaire d'inscription -->
+  <div class="form-container">
+    <!-- Bouton Google OAuth -->
+    <button type="button" class="btn-google" (click)="onGoogleLogin()">
+      <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+        <g fill="none" fill-rule="evenodd">
+          <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+          <path d="M9.003 18c2.43 0 4.467-.806 5.956-2.18L12.05 13.56c-.806.54-1.836.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.96v2.332C2.44 15.983 5.485 18 9.003 18z" fill="#34A853"/>
+          <path d="M3.964 10.712c-.18-.54-.282-1.117-.282-1.71 0-.593.102-1.17.282-1.71V4.96H.957C.347 6.175 0 7.55 0 9.002c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+          <path d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.426 0 9.003 0 5.485 0 2.44 2.017.96 4.958L3.967 7.29c.708-2.127 2.692-3.71 5.036-3.71z" fill="#EA4335"/>
+        </g>
+      </svg>
+      Continuer avec Google
+    </button>
+
+    <div class="separator">
+      <span>ou</span>
+    </div>
+
+    <!-- Formulaire classique -->
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmitRegister()">
+      <!-- Email -->
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          placeholder="votreemail@exemple.com"
+          [class.error]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched"
+        />
+        <div class="error-message" *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
+          <span *ngIf="registerForm.get('email')?.errors?.['required']">L'email est requis</span>
+          <span *ngIf="registerForm.get('email')?.errors?.['email']">Email invalide</span>
+        </div>
+      </div>
+
+      <!-- Mot de passe -->
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <div class="password-input">
+          <input
+            id="password"
+            [type]="showPassword ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="6 caractères minimum"
+            [class.error]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched"
+          />
+          <button 
+            type="button" 
+            class="toggle-password" 
+            (click)="togglePasswordVisibility()"
+            aria-label="Afficher/masquer le mot de passe"
+          >
+            {{ showPassword ? '👁️' : '🙈' }}
+          </button>
+        </div>
+        <div class="error-message" *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
+          <span *ngIf="registerForm.get('password')?.errors?.['required']">Le mot de passe est requis</span>
+          <span *ngIf="registerForm.get('password')?.errors?.['minlength']">Minimum 6 caractères</span>
+        </div>
+      </div>
+
+      <!-- CGU -->
+      <div class="form-group checkbox-group">
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="acceptTerms" />
+          <span>
+            J'accepte les 
+            <a href="/cgu" target="_blank">conditions générales d'utilisation</a>
+          </span>
+        </label>
+        <div class="error-message" *ngIf="registerForm.get('acceptTerms')?.invalid && registerForm.get('acceptTerms')?.touched">
+          Vous devez accepter les CGU
+        </div>
+      </div>
+
+      <!-- Message d'erreur global -->
+      <div class="alert alert-error" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Bouton de soumission -->
+      <button 
+        type="submit" 
+        class="btn-primary" 
+        [disabled]="loading || registerForm.invalid"
+      >
+        {{ loading ? 'Création du compte...' : 'Créer mon compte' }}
+      </button>
+    </form>
+
+    <!-- Lien vers login -->
+    <div class="footer-link">
+      Vous avez déjà un compte ? <a routerLink="/login">Se connecter</a>
+    </div>
+  </div>
+</div>

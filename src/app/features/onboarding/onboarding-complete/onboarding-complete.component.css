@@ -1,0 +1,238 @@
+.completion-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.completion-card {
+  max-width: 600px;
+  width: 100%;
+  background: white;
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+/* Animation de succès */
+.success-animation {
+  margin-bottom: 2rem;
+  animation: bounceIn 0.6s ease-out;
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.success-circle {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto;
+  background: linear-gradient(135deg, #4CAF50, #66BB6A);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+}
+
+.checkmark {
+  font-size: 4rem;
+  color: white;
+  font-weight: bold;
+  animation: checkmarkPop 0.4s ease-out 0.2s;
+  animation-fill-mode: both;
+}
+
+@keyframes checkmarkPop {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Titre et sous-titre */
+.completion-title {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+  animation: fadeInUp 0.6s ease-out 0.3s;
+  animation-fill-mode: both;
+}
+
+.completion-subtitle {
+  font-size: 1.125rem;
+  color: #666;
+  margin-bottom: 2rem;
+  animation: fadeInUp 0.6s ease-out 0.4s;
+  animation-fill-mode: both;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Prochaines étapes */
+.next-steps {
+  text-align: left;
+  margin-bottom: 2rem;
+  animation: fadeInUp 0.6s ease-out 0.5s;
+  animation-fill-mode: both;
+}
+
+.next-steps h2 {
+  font-size: 1.25rem;
+  color: #333;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.steps-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.steps-list li {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  background: #f9f9f9;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.steps-list li:hover {
+  background: #f0f8ff;
+  transform: translateX(5px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.step-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.step-content {
+  flex: 1;
+}
+
+.step-content strong {
+  display: block;
+  font-size: 1rem;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+
+.step-content p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #666;
+  line-height: 1.4;
+}
+
+/* Bouton dashboard */
+.btn-dashboard {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  animation: fadeInUp 0.6s ease-out 0.6s;
+  animation-fill-mode: both;
+}
+
+.btn-dashboard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.btn-dashboard:active {
+  transform: translateY(0);
+}
+
+/* Citation */
+.quote {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+  border-radius: 12px;
+  animation: fadeInUp 0.6s ease-out 0.7s;
+  animation-fill-mode: both;
+}
+
+.quote p {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: #555;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+  .completion-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .completion-title {
+    font-size: 1.75rem;
+  }
+
+  .completion-subtitle {
+    font-size: 1rem;
+  }
+
+  .success-circle {
+    width: 100px;
+    height: 100px;
+  }
+
+  .checkmark {
+    font-size: 3rem;
+  }
+
+  .steps-list li {
+    padding: 0.75rem;
+  }
+
+  .step-icon {
+    font-size: 1.75rem;
+  }
+
+  .step-content strong {
+    font-size: 0.9375rem;
+  }
+}

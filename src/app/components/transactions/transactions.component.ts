@@ -35,6 +35,9 @@ export class TransactionsComponent implements OnInit {
 
   CategoryType = CategoryType;
 
+  // ID de la famille sélectionnée
+  private selectedFamilyId: number | null = null;
+
   constructor(
     private transactionService: TransactionService,
     private categoryService: CategoryService,
@@ -47,19 +50,32 @@ export class TransactionsComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadCategories();
-    this.loadMembers();
-    this.loadTransactions();
+    // S'abonner à la famille sélectionnée
+    this.familyService.selectedFamily$.subscribe(family => {
+      if (family) {
+        this.selectedFamilyId = family.id;
+        // Charger toutes les données quand la famille est disponible
+        this.loadCategories();
+        this.loadMembers();
+        this.loadTransactions();
+      } else {
+        this.selectedFamilyId = null;
+        // Réinitialiser les données si aucune famille n'est sélectionnée
+        this.categories = [];
+        this.members = [];
+        this.transactions = [];
+        this.filteredTransactions = [];
+      }
+    });
   }
 
   loadCategories(): void {
-    const family = this.familyService.getSelectedFamily();
-    if (!family) {
+    if (!this.selectedFamilyId) {
       console.error('Aucune famille sélectionnée');
       return;
     }
 
-    this.categoryService.getCategories(family.id).subscribe({
+    this.categoryService.getCategories(this.selectedFamilyId).subscribe({
       next: (categories) => {
         this.categories = categories;
       },
@@ -68,13 +84,12 @@ export class TransactionsComponent implements OnInit {
   }
 
   loadMembers(): void {
-    const family = this.familyService.getSelectedFamily();
-    if (!family) {
+    if (!this.selectedFamilyId) {
       console.error('Aucune famille sélectionnée');
       return;
     }
 
-    this.familyService.getFamilyMembers(family.id).subscribe({
+    this.familyService.getFamilyMembers(this.selectedFamilyId).subscribe({
       next: (members) => {
         this.members = members.filter(m => m.active);
       },
@@ -83,13 +98,12 @@ export class TransactionsComponent implements OnInit {
   }
 
   loadTransactions(): void {
-    const family = this.familyService.getSelectedFamily();
-    if (!family) {
+    if (!this.selectedFamilyId) {
       console.error('Aucune famille sélectionnée');
       return;
     }
 
-    this.transactionService.getTransactionsByMonthAndYear(family.id, this.currentMonth, this.currentYear)
+    this.transactionService.getTransactionsByMonthAndYear(this.selectedFamilyId, this.currentMonth, this.currentYear)
       .subscribe({
         next: (transactions) => {
           this.transactions = transactions.sort((a, b) => 
@@ -140,14 +154,13 @@ export class TransactionsComponent implements OnInit {
   }
 
   saveTransaction(): void {
-    const family = this.familyService.getSelectedFamily();
-    if (!family) {
+    if (!this.selectedFamilyId) {
       console.error('Aucune famille sélectionnée');
       return;
     }
 
     if (this.editMode && this.currentTransaction.id) {
-      this.transactionService.updateTransaction(family.id, this.currentTransaction.id, this.currentTransaction as any)
+      this.transactionService.updateTransaction(this.selectedFamilyId, this.currentTransaction.id, this.currentTransaction as any)
         .subscribe({
           next: () => {
             this.loadTransactions();
@@ -156,7 +169,7 @@ export class TransactionsComponent implements OnInit {
           error: (err) => console.error('Erreur lors de la mise à jour', err)
         });
     } else {
-      this.transactionService.createTransaction(family.id, this.currentTransaction as any)
+      this.transactionService.createTransaction(this.selectedFamilyId, this.currentTransaction as any)
         .subscribe({
           next: () => {
             this.loadTransactions();
@@ -169,13 +182,12 @@ export class TransactionsComponent implements OnInit {
 
   deleteTransaction(id: number): void {
     if (confirm('Êtes-vous sûr de vouloir supprimer cette transaction ?')) {
-      const family = this.familyService.getSelectedFamily();
-      if (!family) {
+      if (!this.selectedFamilyId) {
         console.error('Aucune famille sélectionnée');
         return;
       }
 
-      this.transactionService.deleteTransaction(family.id, id).subscribe({
+      this.transactionService.deleteTransaction(this.selectedFamilyId, id).subscribe({
         next: () => this.loadTransactions(),
         error: (err) => console.error('Erreur lors de la suppression', err)
       });

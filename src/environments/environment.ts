@@ -1,4 +1,4 @@
 export const environment = {
-  production: true,
-  apiUrl: 'https://faminance-api.onrender.com/api'
+  production: false,
+  apiUrl: 'http://localhost:8080/api'
 };

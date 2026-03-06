@@ -26,6 +26,9 @@ export class BudgetComponent implements OnInit {
   currentYear: number;
   monthName: string = '';
 
+  // ID de la famille sélectionnée
+  private selectedFamilyId: number | null = null;
+
   constructor(
     private budgetService: BudgetService,
     private categoryService: CategoryService,
@@ -38,18 +41,29 @@ export class BudgetComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadCategories();
-    this.loadBudgets();
+    // S'abonner à la famille sélectionnée
+    this.familyService.selectedFamily$.subscribe(family => {
+      if (family) {
+        this.selectedFamilyId = family.id;
+        // Charger les données quand la famille est disponible
+        this.loadCategories();
+        this.loadBudgets();
+      } else {
+        this.selectedFamilyId = null;
+        // Réinitialiser les données si aucune famille n'est sélectionnée
+        this.categories = [];
+        this.budgets = [];
+      }
+    });
   }
 
   loadCategories(): void {
-    const family = this.familyService.getSelectedFamily();
-    if (!family) {
+    if (!this.selectedFamilyId) {
       console.error('Aucune famille sélectionnée');
       return;
     }
 
-    this.categoryService.getCategories(family.id).subscribe({
+    this.categoryService.getCategories(this.selectedFamilyId).subscribe({
       next: (categories) => {
         this.categories = categories.filter(c => c.type === CategoryType.EXPENSE);
       },
@@ -58,13 +72,12 @@ export class BudgetComponent implements OnInit {
   }
 
   loadBudgets(): void {
-    const family = this.familyService.getSelectedFamily();
-    if (!family) {
+    if (!this.selectedFamilyId) {
       console.error('Aucune famille sélectionnée');
       return;
     }
 
-    this.budgetService.getBudgetsByMonthAndYear(family.id, this.currentMonth, this.currentYear)
+    this.budgetService.getBudgetsByMonthAndYear(this.selectedFamilyId, this.currentMonth, this.currentYear)
       .subscribe({
         next: (budgets: Budget[]) => {
           this.budgets = budgets.sort((a: Budget, b: Budget) => {
@@ -90,8 +103,7 @@ export class BudgetComponent implements OnInit {
   }
 
   saveBudget(): void {
-    const family = this.familyService.getSelectedFamily();
-    if (!family) {
+    if (!this.selectedFamilyId) {
       console.error('Aucune famille sélectionnée');
       return;
     }
@@ -100,7 +112,7 @@ export class BudgetComponent implements OnInit {
     this.currentBudget.year = this.currentYear;
 
     if (this.editMode && this.currentBudget.id) {
-      this.budgetService.updateBudget(family.id, this.currentBudget.id, this.currentBudget as any)
+      this.budgetService.updateBudget(this.selectedFamilyId, this.currentBudget.id, this.currentBudget as any)
         .subscribe({
           next: () => {
             this.loadBudgets();
@@ -109,7 +121,7 @@ export class BudgetComponent implements OnInit {
           error: (err: any) => console.error('Erreur lors de la mise à jour', err)
         });
     } else {
-      this.budgetService.createBudget(family.id, this.currentBudget as any)
+      this.budgetService.createBudget(this.selectedFamilyId, this.currentBudget as any)
         .subscribe({
           next: () => {
             this.loadBudgets();
@@ -122,13 +134,12 @@ export class BudgetComponent implements OnInit {
 
   deleteBudget(id: number): void {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce budget ?')) {
-      const family = this.familyService.getSelectedFamily();
-      if (!family) {
+      if (!this.selectedFamilyId) {
         console.error('Aucune famille sélectionnée');
         return;
       }
 
-      this.budgetService.deleteBudget(family.id, id).subscribe({
+      this.budgetService.deleteBudget(this.selectedFamilyId, id).subscribe({
         next: () => this.loadBudgets(),
         error: (err: any) => console.error('Erreur lors de la suppression', err)
       });
@@ -136,13 +147,12 @@ export class BudgetComponent implements OnInit {
   }
 
   recalculateBudgets(): void {
-    const family = this.familyService.getSelectedFamily();
-    if (!family) {
+    if (!this.selectedFamilyId) {
       console.error('Aucune famille sélectionnée');
       return;
     }
 
-    this.budgetService.recalculateBudgets(family.id, this.currentMonth, this.currentYear)
+    this.budgetService.recalculateBudgets(this.selectedFamilyId, this.currentMonth, this.currentYear)
       .subscribe({
         next: () => {
           this.loadBudgets();

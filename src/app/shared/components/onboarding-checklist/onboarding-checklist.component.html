@@ -1,0 +1,50 @@
+<div class="onboarding-checklist-widget" *ngIf="!isAllCompleted()">
+  <!-- En-tête -->
+  <div class="checklist-header">
+    <div class="header-content">
+      <h3>Complétez votre configuration</h3>
+      <div class="progress-info">
+        <span class="progress-text">{{ getCompletedCount() }} / {{ getTotalCount() }} terminé{{ getCompletedCount() > 1 ? 's' : '' }}</span>
+        <span class="progress-percentage">{{ getCompletionPercentage() }}%</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-expand" (click)="toggleExpand()" [attr.aria-label]="isExpanded ? 'Réduire' : 'Développer'">
+        {{ isExpanded ? '−' : '+' }}
+      </button>
+      <button class="btn-dismiss" (click)="dismiss()" aria-label="Fermer">
+        ×
+      </button>
+    </div>
+  </div>
+
+  <!-- Barre de progression -->
+  <div class="progress-bar">
+    <div class="progress-fill" [style.width.%]="getCompletionPercentage()"></div>
+  </div>
+
+  <!-- Liste de tâches -->
+  <div class="checklist-content" *ngIf="isExpanded">
+    <ul class="checklist-items">
+      <li
+        *ngFor="let item of checklist"
+        class="checklist-item"
+        [class.completed]="item.completed"
+        [class.clickable]="!item.completed && item.route"
+        (click)="navigateTo(item)"
+      >
+        <div class="item-icon">{{ item.icon }}</div>
+        <div class="item-content">
+          <div class="item-title">{{ item.title }}</div>
+          <div class="item-description">{{ item.description }}</div>
+        </div>
+        <div class="item-arrow" *ngIf="!item.completed && item.route">→</div>
+      </li>
+    </ul>
+
+    <!-- Message de motivation -->
+    <div class="motivation-message" *ngIf="getCompletionPercentage() > 0 && getCompletionPercentage() < 100">
+      <p>{{ getMotivationMessage() }}</p>
+    </div>
+  </div>
+</div>

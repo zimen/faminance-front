@@ -5,6 +5,7 @@ import { BehaviorSubject, Observable, tap, catchError, throwError } from 'rxjs';
 import { User, AuthResponse, LoginRequest, RegisterRequest } from '../models';
 import { StorageService } from './storage.service';
 import { environment } from '../../../environments/environment';
+import { OnboardingService } from './onboarding.service';
 
 /**
  * AuthService - Gestion de l'authentification
@@ -18,6 +19,7 @@ export class AuthService {
   
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
+  private onboardingService?: OnboardingService; // Injection tardive pour éviter la dépendance circulaire
   
   constructor(
     private http: HttpClient,
@@ -25,6 +27,13 @@ export class AuthService {
     private storageService: StorageService
   ) {
     this.loadCurrentUser();
+  }
+
+  /**
+   * Définit le OnboardingService (injection tardive pour éviter la dépendance circulaire)
+   */
+  setOnboardingService(onboardingService: OnboardingService): void {
+    this.onboardingService = onboardingService;
   }
 
   /**
@@ -47,7 +56,11 @@ export class AuthService {
   login(request: LoginRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.API_URL}/login`, request)
       .pipe(
-        tap(response => this.handleAuthResponse(response)),
+        tap(response => {
+          this.handleAuthResponse(response);
+          // Synchroniser le statut d'onboarding après connexion
+          this.syncOnboardingAfterAuth();
+        }),
         catchError(error => {
           console.error('Erreur lors de la connexion:', error);
           return throwError(() => error);
@@ -144,6 +157,10 @@ export class AuthService {
     // Ensuite, si authentifié, recharger depuis l'API pour avoir les données à jour
     if (this.isAuthenticated()) {
       this.getCurrentUser().subscribe({
+        next: () => {
+          // Synchroniser le statut d'onboarding au démarrage
+          this.syncOnboardingAfterAuth();
+        },
         error: () => {
           // Si erreur, garder le user du cache (pas de déconnexion automatique)
           console.warn('Impossible de charger l\'utilisateur courant depuis l\'API');
@@ -160,6 +177,22 @@ export class AuthService {
     this.storageService.saveRefreshToken(response.refreshToken);
     this.storageService.saveUser(response.user);
     this.currentUserSubject.next(response.user);
+  }
+
+  /**
+   * Synchronise le statut d'onboarding après authentification
+   */
+  private syncOnboardingAfterAuth(): void {
+    if (this.onboardingService) {
+      this.onboardingService.syncStateWithBackend().subscribe({
+        next: () => {
+          console.log('Statut d\'onboarding synchronisé avec le backend');
+        },
+        error: (error) => {
+          console.warn('Impossible de synchroniser le statut d\'onboarding:', error);
+        }
+      });
+    }
   }
 
   /**

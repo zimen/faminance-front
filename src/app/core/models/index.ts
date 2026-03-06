@@ -8,3 +8,4 @@ export * from './category.model';
 export * from './transaction.model';
 export * from './budget.model';
 export * from './statistics.model';
+export * from './onboarding.model';

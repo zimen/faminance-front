@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CategoryService } from '../../core/services/category.service';
-import { Category, CategoryRequest, CategoryType } from '../../core/models/category.model';
+import { Category, CategoryRequest, CategoryType, SystemCategory } from '../../core/models/category.model';
 import { FamilyService } from '../../core/services/family.service';
 
 @Component({
@@ -15,13 +15,26 @@ import { FamilyService } from '../../core/services/family.service';
 export class CategoriesComponent implements OnInit {
   categories: Category[] = [];
   filteredCategories: Category[] = [];
+  systemCategories: SystemCategory[] = [];
+  filteredSystemCategories: SystemCategory[] = [];
+  
   showForm = false;
   editMode = false;
   
   currentCategory: Partial<Category> = this.getEmptyCategory();
   
+  // Onglets
+  activeTab: 'my-categories' | 'system-catalog' = 'my-categories';
+  
+  // Filtres
   filterType: CategoryType | 'ALL' = 'ALL';
+  systemFilterType: CategoryType | 'ALL' = 'ALL';
+  showRecommendedOnly = false;
+  
   CategoryType = CategoryType;
+
+  // ID de la famille sélectionnée
+  private selectedFamilyId: number | null = null;
 
   // Emojis couramment utilisés pour les catégories
   commonIcons = [
@@ -43,17 +56,31 @@ export class CategoriesComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadCategories();
+    // S'abonner à la famille sélectionnée
+    this.familyService.selectedFamily$.subscribe(family => {
+      if (family) {
+        this.selectedFamilyId = family.id;
+        // Charger les données quand la famille est disponible
+        this.loadCategories();
+        this.loadSystemCategories();
+      } else {
+        this.selectedFamilyId = null;
+        // Réinitialiser les données si aucune famille n'est sélectionnée
+        this.categories = [];
+        this.filteredCategories = [];
+        this.systemCategories = [];
+        this.filteredSystemCategories = [];
+      }
+    });
   }
 
   loadCategories(): void {
-    const family = this.familyService.getSelectedFamily();
-    if (!family) {
+    if (!this.selectedFamilyId) {
       console.error('Aucune famille sélectionnée');
       return;
     }
 
-    this.categoryService.getCategories(family.id).subscribe({
+    this.categoryService.getCategories(this.selectedFamilyId).subscribe({
       next: (categories) => {
         this.categories = categories.sort((a, b) => {
           // Tri par displayOrder, puis par nom si égalité
@@ -63,6 +90,7 @@ export class CategoriesComponent implements OnInit {
           return a.name.localeCompare(b.name);
         });
         this.applyFilter();
+        this.applySystemFilter(); // Mettre à jour le filtre système pour exclure les catégories déjà ajoutées
       },
       error: (err) => console.error('Erreur lors du chargement des catégories', err)
     });
@@ -80,6 +108,72 @@ export class CategoriesComponent implements OnInit {
     this.applyFilter();
   }
 
+  loadSystemCategories(): void {
+    const endpoint = this.showRecommendedOnly 
+      ? this.categoryService.getRecommendedSystemCategories()
+      : this.categoryService.getSystemCategories();
+
+    endpoint.subscribe({
+      next: (systemCategories) => {
+        this.systemCategories = systemCategories;
+        this.applySystemFilter();
+      },
+      error: (err) => console.error('Erreur lors du chargement des catégories système', err)
+    });
+  }
+
+  applySystemFilter(): void {
+    let filtered = [...this.systemCategories];
+
+    // Filtre par type
+    if (this.systemFilterType !== 'ALL') {
+      filtered = filtered.filter(c => c.type === this.systemFilterType);
+    }
+
+    // Exclure les catégories déjà ajoutées à la famille
+    const familySystemCategoryIds = this.categories
+      .filter(c => c.systemCategoryId)
+      .map(c => c.systemCategoryId);
+    
+    filtered = filtered.filter(sc => !familySystemCategoryIds.includes(sc.id));
+
+    this.filteredSystemCategories = filtered;
+  }
+
+  onSystemFilterChange(): void {
+    this.applySystemFilter();
+  }
+
+  onRecommendedToggle(): void {
+    this.loadSystemCategories();
+  }
+
+  switchTab(tab: 'my-categories' | 'system-catalog'): void {
+    this.activeTab = tab;
+  }
+
+  addSystemCategory(systemCategory: SystemCategory): void {
+    if (!this.selectedFamilyId) {
+      console.error('Aucune famille sélectionnée');
+      return;
+    }
+
+    if (confirm(`Ajouter "${systemCategory.name}" à vos catégories ?`)) {
+      this.categoryService.addSystemCategoryToFamily(this.selectedFamilyId, systemCategory.id)
+        .subscribe({
+          next: () => {
+            this.loadCategories();
+            this.loadSystemCategories(); // Recharger pour mettre à jour la liste
+          },
+          error: (err) => console.error('Erreur lors de l\'ajout de la catégorie système', err)
+        });
+    }
+  }
+
+  isSystemCategory(category: Category): boolean {
+    return category.isSystemCategory === true;
+  }
+
   openAddForm(): void {
     this.currentCategory = this.getEmptyCategory();
     this.editMode = false;
@@ -93,8 +187,7 @@ export class CategoriesComponent implements OnInit {
   }
 
   saveCategory(): void {
-    const family = this.familyService.getSelectedFamily();
-    if (!family) {
+    if (!this.selectedFamilyId) {
       console.error('Aucune famille sélectionnée');
       return;
     }
@@ -109,7 +202,7 @@ export class CategoriesComponent implements OnInit {
     };
 
     if (this.editMode && this.currentCategory.id) {
-      this.categoryService.updateCategory(family.id, this.currentCategory.id, request)
+      this.categoryService.updateCategory(this.selectedFamilyId, this.currentCategory.id, request)
         .subscribe({
           next: () => {
             this.loadCategories();
@@ -118,7 +211,7 @@ export class CategoriesComponent implements OnInit {
           error: (err) => console.error('Erreur lors de la mise à jour', err)
         });
     } else {
-      this.categoryService.createCategory(family.id, request)
+      this.categoryService.createCategory(this.selectedFamilyId, request)
         .subscribe({
           next: () => {
             this.loadCategories();
@@ -131,13 +224,12 @@ export class CategoriesComponent implements OnInit {
 
   deleteCategory(id: number): void {
     if (confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ? Toutes les transactions associées seront affectées.')) {
-      const family = this.familyService.getSelectedFamily();
-      if (!family) {
+      if (!this.selectedFamilyId) {
         console.error('Aucune famille sélectionnée');
         return;
       }
 
-      this.categoryService.deleteCategory(family.id, id).subscribe({
+      this.categoryService.deleteCategory(this.selectedFamilyId, id).subscribe({
         next: () => this.loadCategories(),
         error: (err) => console.error('Erreur lors de la suppression', err)
       });

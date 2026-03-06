@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
-import { Category, CategoryRequest } from '../models';
+import { Category, CategoryRequest, SystemCategory } from '../models';
 import { environment } from '../../../environments/environment';
 
 /**
@@ -96,6 +96,72 @@ export class CategoryService {
     ).pipe(
       catchError(error => {
         console.error(`Erreur lors du changement de statut de la catégorie ${categoryId}:`, error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Récupère toutes les catégories système disponibles
+   */
+  getSystemCategories(): Observable<SystemCategory[]> {
+    return this.http.get<SystemCategory[]>(`${this.API_URL}/system-categories`)
+      .pipe(
+        catchError(error => {
+          console.error('Erreur lors de la récupération des catégories système:', error);
+          return throwError(() => error);
+        })
+      );
+  }
+
+  /**
+   * Récupère les catégories système recommandées
+   */
+  getRecommendedSystemCategories(): Observable<SystemCategory[]> {
+    return this.http.get<SystemCategory[]>(`${this.API_URL}/system-categories/recommended`)
+      .pipe(
+        catchError(error => {
+          console.error('Erreur lors de la récupération des catégories recommandées:', error);
+          return throwError(() => error);
+        })
+      );
+  }
+
+  /**
+   * Ajoute une catégorie système à la famille
+   * Crée une copie de la catégorie système pour la famille
+   */
+  addSystemCategoryToFamily(familyId: number, systemCategoryId: number): Observable<Category> {
+    const request: CategoryRequest = {
+      name: '', // Le backend utilisera le nom de la catégorie système
+      type: 'INCOME' as any, // Le backend utilisera le type de la catégorie système
+      icon: '',
+      color: '',
+      systemCategoryId
+    };
+    
+    return this.http.post<Category>(
+      `${this.API_URL}/families/${familyId}/categories`,
+      request
+    ).pipe(
+      catchError(error => {
+        console.error('Erreur lors de l\'ajout de la catégorie système:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Ajoute plusieurs catégories système à la famille en une seule requête
+   * Utilisé lors de l'onboarding pour ajouter rapidement les catégories recommandées
+   */
+  addMultipleSystemCategories(familyId: number, systemCategoryIds: number[]): Observable<Category[]> {
+    return this.http.post<Category[]>(
+      `${this.API_URL}/families/${familyId}/categories/bulk`,
+      { systemCategoryIds }
+    ).pipe(
+      catchError(error => {
+        console.error('Erreur lors de l\'ajout multiple de catégories système:', error);
         return throwError(() => error);
       })
     );

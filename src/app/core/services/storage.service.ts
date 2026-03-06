@@ -13,6 +13,8 @@ export class StorageService {
   private readonly REFRESH_TOKEN_KEY = 'refresh_token';
   private readonly USER_KEY = 'current_user';
   private readonly SELECTED_FAMILY_KEY = 'selected_family_id';
+  private readonly ONBOARDING_STATE_KEY = 'onboarding_state';
+  private readonly ONBOARDING_COMPLETE_KEY = 'onboarding_complete';
 
   /**
    * Sauvegarde le token JWT
@@ -143,10 +145,80 @@ export class StorageService {
   }
 
   /**
+   * Sauvegarde l'état de l'onboarding
+   */
+  saveOnboardingState(state: any): void {
+    try {
+      localStorage.setItem(this.ONBOARDING_STATE_KEY, JSON.stringify(state));
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde de l\'état onboarding:', error);
+    }
+  }
+
+  /**
+   * Récupère l'état de l'onboarding
+   */
+  getOnboardingState(): any {
+    try {
+      const state = localStorage.getItem(this.ONBOARDING_STATE_KEY);
+      return state ? JSON.parse(state) : null;
+    } catch (error) {
+      console.error('Erreur lors de la récupération de l\'état onboarding:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Supprime l'état de l'onboarding
+   */
+  clearOnboardingState(): void {
+    try {
+      localStorage.removeItem(this.ONBOARDING_STATE_KEY);
+    } catch (error) {
+      console.error('Erreur lors de la suppression de l\'état onboarding:', error);
+    }
+  }
+
+  /**
+   * Marque l'onboarding comme terminé
+   */
+  markOnboardingComplete(): void {
+    try {
+      localStorage.setItem(this.ONBOARDING_COMPLETE_KEY, 'true');
+    } catch (error) {
+      console.error('Erreur lors du marquage onboarding complet:', error);
+    }
+  }
+
+  /**
+   * Vérifie si l'onboarding est terminé
+   */
+  isOnboardingComplete(): boolean {
+    try {
+      return localStorage.getItem(this.ONBOARDING_COMPLETE_KEY) === 'true';
+    } catch (error) {
+      console.error('Erreur lors de la vérification onboarding complet:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Supprime le flag onboarding complete
+   */
+  clearOnboardingComplete(): void {
+    try {
+      localStorage.removeItem(this.ONBOARDING_COMPLETE_KEY);
+    } catch (error) {
+      console.error('Erreur lors de la suppression du flag onboarding:', error);
+    }
+  }
+
+  /**
    * Nettoie tout le storage (lors de la déconnexion)
    */
   clearAll(): void {
     this.clearToken();
     this.clearSelectedFamilyId();
+    this.clearUser();
   }
 }

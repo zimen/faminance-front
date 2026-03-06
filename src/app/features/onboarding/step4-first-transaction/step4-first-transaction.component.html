@@ -1,0 +1,117 @@
+<div class="onboarding-container">
+  <!-- Barre de progression -->
+  <div class="progress-bar">
+    <div class="progress-fill" [style.width.%]="getProgress()"></div>
+  </div>
+
+  <!-- En-tête -->
+  <div class="header">
+    <h1>Dernière étape ! 🎯</h1>
+    <p class="subtitle">Ajoutez votre première transaction (facultatif)</p>
+    <div class="steps-indicator">
+      <span class="step completed">✓</span>
+      <span class="separator">•</span>
+      <span class="step completed">✓</span>
+      <span class="separator">•</span>
+      <span class="step completed">✓</span>
+      <span class="separator">•</span>
+      <span class="step active">4</span>
+    </div>
+  </div>
+
+  <!-- Formulaire -->
+  <div class="form-container">
+    <form [formGroup]="transactionForm" (ngSubmit)="onSubmit()">
+      <!-- Titre -->
+      <div class="form-group">
+        <label for="title">Description</label>
+        <input
+          id="title"
+          type="text"
+          formControlName="title"
+          placeholder="ex: Courses du mardi"
+          [class.error]="transactionForm.get('title')?.invalid && transactionForm.get('title')?.touched"
+        />
+        <div class="error-message" *ngIf="transactionForm.get('title')?.invalid && transactionForm.get('title')?.touched">
+          <span *ngIf="transactionForm.get('title')?.errors?.['required']">La description est requise</span>
+          <span *ngIf="transactionForm.get('title')?.errors?.['minlength']">Minimum 2 caractères</span>
+        </div>
+      </div>
+
+      <!-- Montant -->
+      <div class="form-group">
+        <label for="amount">Montant (€)</label>
+        <input
+          id="amount"
+          type="number"
+          step="0.01"
+          formControlName="amount"
+          placeholder="0.00"
+          [class.error]="transactionForm.get('amount')?.invalid && transactionForm.get('amount')?.touched"
+        />
+        <div class="error-message" *ngIf="transactionForm.get('amount')?.invalid && transactionForm.get('amount')?.touched">
+          <span *ngIf="transactionForm.get('amount')?.errors?.['required']">Le montant est requis</span>
+          <span *ngIf="transactionForm.get('amount')?.errors?.['min']">Le montant doit être supérieur à 0</span>
+        </div>
+      </div>
+
+      <!-- Catégorie -->
+      <div class="form-group">
+        <label for="categoryId">Catégorie</label>
+        <select
+          id="categoryId"
+          formControlName="categoryId"
+          [class.error]="transactionForm.get('categoryId')?.invalid && transactionForm.get('categoryId')?.touched"
+        >
+          <option [value]="null" disabled>Sélectionnez une catégorie</option>
+          <option *ngFor="let category of categories" [value]="category.id">
+            {{ category.icon }} {{ category.name }}
+          </option>
+        </select>
+        <div class="error-message" *ngIf="transactionForm.get('categoryId')?.invalid && transactionForm.get('categoryId')?.touched">
+          Veuillez sélectionner une catégorie
+        </div>
+      </div>
+
+      <!-- Date -->
+      <div class="form-group">
+        <label for="date">Date</label>
+        <input
+          id="date"
+          type="date"
+          formControlName="date"
+          [class.error]="transactionForm.get('date')?.invalid && transactionForm.get('date')?.touched"
+        />
+        <div class="error-message" *ngIf="transactionForm.get('date')?.invalid && transactionForm.get('date')?.touched">
+          La date est requise
+        </div>
+      </div>
+
+      <!-- Message d'erreur global -->
+      <div class="alert alert-error" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Info card -->
+      <div class="info-card">
+        <div class="info-icon">💡</div>
+        <div class="info-text">
+          Cette étape est facultative. Vous pourrez ajouter vos transactions à tout moment depuis le tableau de bord.
+        </div>
+      </div>
+
+      <!-- Boutons -->
+      <div class="button-group">
+        <button type="button" class="btn-secondary" (click)="onBack()" [disabled]="loading">
+          ← Retour
+        </button>
+        <button type="button" class="btn-link" (click)="onSkip()" [disabled]="loading">
+          Passer
+        </button>
+        <button type="submit" class="btn-primary" [disabled]="loading || transactionForm.invalid">
+          {{ loading ? 'Ajout...' : 'Terminer' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

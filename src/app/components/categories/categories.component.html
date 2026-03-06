@@ -3,38 +3,147 @@
     <h1>Catégories</h1>
   </div>
 
-  <div class="summary">
-    <div class="summary-item income">
-      <span>Catégories de Revenus:</span>
-      <strong>{{ getIncomeCount() }}</strong>
+  <!-- Tabs -->
+  <div class="tabs">
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'my-categories'"
+      (click)="switchTab('my-categories')">
+      📁 Mes Catégories ({{ categories.length }})
+    </button>
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'system-catalog'"
+      (click)="switchTab('system-catalog')">
+      🌟 Catalogue Système
+    </button>
+  </div>
+
+  <!-- Tab: Mes Catégories -->
+  <div *ngIf="activeTab === 'my-categories'" class="tab-content">
+    <div class="summary">
+      <div class="summary-item income">
+        <span>Catégories de Revenus:</span>
+        <strong>{{ getIncomeCount() }}</strong>
+      </div>
+      <div class="summary-item expense">
+        <span>Catégories de Dépenses:</span>
+        <strong>{{ getExpenseCount() }}</strong>
+      </div>
+      <div class="summary-item total">
+        <span>Total:</span>
+        <strong>{{ categories.length }}</strong>
+      </div>
     </div>
-    <div class="summary-item expense">
-      <span>Catégories de Dépenses:</span>
-      <strong>{{ getExpenseCount() }}</strong>
+
+    <div class="toolbar">
+      <div class="filter-group">
+        <label>Filtrer par type:</label>
+        <select [(ngModel)]="filterType" (change)="onFilterChange()" class="filter-select">
+          <option value="ALL">Toutes</option>
+          <option [value]="CategoryType.INCOME">Revenus</option>
+          <option [value]="CategoryType.EXPENSE">Dépenses</option>
+        </select>
+      </div>
+      <button (click)="openAddForm()" class="btn-primary">+ Nouvelle Catégorie Custom</button>
     </div>
-    <div class="summary-item total">
-      <span>Total:</span>
-      <strong>{{ categories.length }}</strong>
+
+    <!-- Liste des catégories -->
+    <div class="categories-grid">
+      <div *ngIf="filteredCategories.length === 0" class="empty-state">
+        Aucune catégorie. Ajoutez-en depuis le catalogue système ou créez vos propres catégories !
+      </div>
+
+      <div *ngFor="let category of filteredCategories" class="category-card">
+        <div class="card-header" [style.background-color]="category.color">
+          <div class="category-icon">{{ category.icon }}</div>
+        </div>
+        <div class="card-body">
+          <h3 class="category-name">
+            {{ category.name }}
+            <span *ngIf="isSystemCategory(category)" class="badge-system" title="Catégorie système">🌟</span>
+          </h3>
+          <p class="category-description" *ngIf="category.description">
+            {{ category.description }}
+          </p>
+          <div class="category-type" 
+               [class.income-badge]="category.type === CategoryType.INCOME"
+               [class.expense-badge]="category.type === CategoryType.EXPENSE">
+            {{ category.type === CategoryType.INCOME ? 'Revenu' : 'Dépense' }}
+          </div>
+        </div>
+        <div class="card-actions">
+          <button *ngIf="!isSystemCategory(category)" (click)="editCategory(category)" class="btn-edit">✎ Modifier</button>
+          <button (click)="deleteCategory(category.id!)" class="btn-delete">🗑 Supprimer</button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="toolbar">
-    <div class="filter-group">
-      <label>Filtrer par type:</label>
-      <select [(ngModel)]="filterType" (change)="onFilterChange()" class="filter-select">
-        <option value="ALL">Toutes</option>
-        <option [value]="CategoryType.INCOME">Revenus</option>
-        <option [value]="CategoryType.EXPENSE">Dépenses</option>
-      </select>
+  <!-- Tab: Catalogue Système -->
+  <div *ngIf="activeTab === 'system-catalog'" class="tab-content">
+    <div class="system-toolbar">
+      <div class="filter-group">
+        <label>Type:</label>
+        <select [(ngModel)]="systemFilterType" (change)="onSystemFilterChange()" class="filter-select">
+          <option value="ALL">Toutes</option>
+          <option [value]="CategoryType.INCOME">Revenus</option>
+          <option [value]="CategoryType.EXPENSE">Dépenses</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="showRecommendedOnly" (change)="onRecommendedToggle()">
+          Recommandées uniquement
+        </label>
+      </div>
     </div>
-    <button (click)="openAddForm()" class="btn-primary">+ Nouvelle Catégorie</button>
+
+    <div class="info-banner">
+      💡 <strong>Astuce :</strong> Ajoutez rapidement des catégories prédéfinies ou créez vos propres catégories personnalisées !
+    </div>
+
+    <!-- Liste des catégories système -->
+    <div class="categories-grid">
+      <div *ngIf="filteredSystemCategories.length === 0" class="empty-state">
+        {{ systemCategories.length === 0 ? 'Chargement des catégories système...' : 'Toutes les catégories ont déjà été ajoutées !' }}
+      </div>
+
+      <div *ngFor="let systemCat of filteredSystemCategories" class="category-card system-card">
+        <div class="card-header" [style.background-color]="systemCat.color">
+          <div class="category-icon">{{ systemCat.icon }}</div>
+        </div>
+        <div class="card-body">
+          <h3 class="category-name">
+            {{ systemCat.name }}
+            <span *ngIf="systemCat.recommended" class="badge-recommended" title="Recommandée">⭐</span>
+          </h3>
+          <p class="category-description" *ngIf="systemCat.description">
+            {{ systemCat.description }}
+          </p>
+          <div class="category-type" 
+               [class.income-badge]="systemCat.type === CategoryType.INCOME"
+               [class.expense-badge]="systemCat.type === CategoryType.EXPENSE">
+            {{ systemCat.type === CategoryType.INCOME ? 'Revenu' : 'Dépense' }}
+          </div>
+          <div *ngIf="systemCat.usageCount" class="category-usage">
+            📊 Utilisée par {{ systemCat.usageCount }} famille{{ systemCat.usageCount > 1 ? 's' : '' }}
+          </div>
+        </div>
+        <div class="card-actions">
+          <button (click)="addSystemCategory(systemCat)" class="btn-add">
+            + Ajouter
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- Formulaire -->
+  <!-- Modal Formulaire (uniquement pour catégories custom) -->
   <div *ngIf="showForm" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>{{ editMode ? 'Modifier' : 'Nouvelle' }} Catégorie</h2>
+        <h2>{{ editMode ? 'Modifier' : 'Nouvelle' }} Catégorie Personnalisée</h2>
         <button (click)="closeForm()" class="btn-close">✕</button>
       </div>
       <form (ngSubmit)="saveCategory()">
@@ -99,36 +208,6 @@
           <button type="button" (click)="closeForm()" class="btn-secondary">Annuler</button>
         </div>
       </form>
-    </div>
-  </div>
-
-  <!-- Liste des catégories -->
-  <div class="categories-list">
-    <div *ngIf="filteredCategories.length === 0" class="empty-state">
-      Aucune catégorie trouvée
-    </div>
-
-    <div class="categories-grid">
-      <div *ngFor="let category of filteredCategories" class="category-card">
-        <div class="card-header" [style.background-color]="category.color">
-          <div class="category-icon">{{ category.icon }}</div>
-        </div>
-        <div class="card-body">
-          <h3 class="category-name">{{ category.name }}</h3>
-          <p class="category-description" *ngIf="category.description">
-            {{ category.description }}
-          </p>
-          <div class="category-type" 
-               [class.income-badge]="category.type === CategoryType.INCOME"
-               [class.expense-badge]="category.type === CategoryType.EXPENSE">
-            {{ category.type === CategoryType.INCOME ? 'Revenu' : 'Dépense' }}
-          </div>
-        </div>
-        <div class="card-actions">
-          <button (click)="editCategory(category)" class="btn-edit">✎ Modifier</button>
-          <button (click)="deleteCategory(category.id!)" class="btn-delete">🗑 Supprimer</button>
-        </div>
-      </div>
     </div>
   </div>
 </div>
