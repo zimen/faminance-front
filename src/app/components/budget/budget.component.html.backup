@@ -1,0 +1,148 @@
+<div class="budget-container">
+  <div class="header">
+    <h1>Budgets</h1>
+    <div class="month-selector">
+      <button (click)="previousMonth()" class="btn-nav">←</button>
+      <h2>{{ monthName }} {{ currentYear }}</h2>
+      <button (click)="nextMonth()" class="btn-nav">→</button>
+    </div>
+  </div>
+
+  <div class="summary">
+    <div class="summary-item planned">
+      <span>Budget Planifié:</span>
+      <strong>{{ getTotalPlanned() | number:'1.2-2' }} €</strong>
+    </div>
+    <div class="summary-item actual">
+      <span>Dépensé:</span>
+      <strong>{{ getTotalActual() | number:'1.2-2' }} €</strong>
+    </div>
+    <div class="summary-item remaining" [class.negative]="getTotalRemaining() < 0">
+      <span>Restant:</span>
+      <strong>{{ getTotalRemaining() | number:'1.2-2' }} €</strong>
+    </div>
+  </div>
+
+  <div class="actions" *ngIf="!budgetInstance">
+    <button (click)="createEmptyBudget()" class="btn-primary">+ Créer Budget pour ce mois</button>
+  </div>
+
+  <!-- Formulaire ligne budgétaire -->
+  <div *ngIf="showLineForm" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>{{ editingLineId ? 'Modifier' : 'Nouvelle' }} Ligne Budgétaire</h2>
+        <button (click)="closeLineForm()" class="btn-close">✕</button>
+      </div>
+      <form (ngSubmit)="saveLine()">
+        <div class="form-group">
+          <label>Libellé *</label>
+          <input type="text" [(ngModel)]="currentLine.label" name="label" 
+                 placeholder="Ex: Courses alimentaires" required>
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea [(ngModel)]="currentLine.description" name="description" 
+                    placeholder="Description optionnelle"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Montant Planifié (€) *</label>
+          <input type="number" [(ngModel)]="currentLine.plannedAmount" name="plannedAmount" 
+                 step="0.01" min="0" required>
+        </div>
+
+        <div class="form-group">
+          <label>Date Prévue</label>
+          <input type="date" [(ngModel)]="currentLine.plannedDate" name="plannedDate">
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Enregistrer</button>
+          <button type="button" (click)="closeLineForm()" class="btn-secondary">Annuler</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Liste des catégories et lignes -->
+  <div class="budget-list">
+    <div *ngIf="!budgetInstance" class="empty-state">
+      Aucun budget défini pour ce mois. Créez un budget ou appliquez un template pour commencer.
+    </div>
+
+    <!-- Budget vide sans catégories -->
+    <div *ngIf="budgetInstance && budgetInstance.categories.length === 0" class="empty-state">
+      <p>Budget créé mais vide. Ajoutez des lignes budgétaires par catégorie.</p>
+      <div class="category-quick-add">
+        <h4>Sélectionnez une catégorie pour ajouter une ligne :</h4>
+        <div class="category-buttons">
+          <button *ngFor="let cat of categories" 
+                  (click)="openAddLineForm(cat.id!)" 
+                  class="btn-category"
+                  [style.border-color]="cat.color">
+            <span [style.color]="cat.color">{{ cat.icon }}</span>
+            {{ cat.name }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Catégories avec lignes -->
+    <div *ngFor="let category of budgetInstance?.categories" class="category-section">
+      <div class="category-header">
+        <div class="category-info">
+          <span class="category-icon" [style.color]="category.categoryColor">
+            {{ category.categoryIcon }}
+          </span>
+          <h3>{{ category.categoryName }}</h3>
+        </div>
+        <div class="category-amounts">
+          <span class="actual-amount">{{ category.totalActual | number:'1.2-2' }} €</span>
+          <span class="separator">/</span>
+          <span class="planned-amount">{{ category.totalPlanned | number:'1.2-2' }} €</span>
+        </div>
+      </div>
+
+      <div class="category-progress">
+        <div class="progress-bar" [ngClass]="getProgressBarClass(category)">
+          <div class="progress-fill" [style.width]="getProgressBarWidth(category)"></div>
+        </div>
+        <div class="progress-text">{{ category.percentageUsed | number:'1.0-0' }}%</div>
+      </div>
+
+      <!-- Lignes budgétaires de cette catégorie -->
+      <div class="budget-lines">
+        <div *ngFor="let line of category.lines" class="budget-line-item">
+          <div class="line-details">
+            <div class="line-header">
+              <strong>{{ line.label }}</strong>
+              <div class="line-amounts">
+                <span class="actual-amount">{{ line.actualAmount | number:'1.2-2' }} €</span>
+                <span class="separator">/</span>
+                <span class="planned-amount">{{ line.plannedAmount | number:'1.2-2' }} €</span>
+              </div>
+            </div>
+            <div *ngIf="line.description" class="line-description">{{ line.description }}</div>
+            <div class="line-progress">
+              <div class="progress-bar small" [ngClass]="getLineProgressClass(line)">
+                <div class="progress-fill" [style.width]="getLineProgressWidth(line)"></div>
+              </div>
+              <div class="progress-text small">{{ line.percentageUsed | number:'1.0-0' }}%</div>
+            </div>
+          </div>
+          <div class="line-actions">
+            <button (click)="openEditLineForm(category.categoryId, line)" class="btn-edit">✎</button>
+            <button (click)="deleteLine(category.categoryId, line.id)" class="btn-delete">🗑</button>
+          </div>
+        </div>
+
+        <!-- Bouton ajouter ligne -->
+        <button (click)="openAddLineForm(category.categoryId)" class="btn-add-line">
+          + Ajouter une ligne
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

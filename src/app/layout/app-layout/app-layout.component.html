@@ -1,0 +1,30 @@
+<div class="app-layout">
+  <!-- Sidebar -->
+  <app-sidebar [class.mobile-open]="sidebarOpen"></app-sidebar>
+
+  <!-- Main Content Area -->
+  <div class="main-content">
+    <!-- Header (visible sur mobile) -->
+    <header class="mobile-header">
+      <button class="menu-toggle" (click)="toggleSidebar()">
+        <span class="hamburger-icon">☰</span>
+      </button>
+      <h1 class="mobile-title">💰 Family Finance</h1>
+      <div class="header-actions">
+        <app-family-selector></app-family-selector>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <div class="content-wrapper">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+
+  <!-- Overlay pour mobile -->
+  <div 
+    *ngIf="sidebarOpen" 
+    class="sidebar-overlay" 
+    (click)="toggleSidebar()">
+  </div>
+</div>

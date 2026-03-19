@@ -1,0 +1,196 @@
+<div class="template-form-container">
+  <div class="header">
+    <h1>{{ editMode ? 'Modifier' : 'Nouveau' }} Modèle de Budget</h1>
+    <button routerLink="/budget-templates" class="btn-back">← Retour</button>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="errorMessage" class="alert alert-error">
+    {{ errorMessage }}
+  </div>
+
+  <!-- Formulaire principal -->
+  <div class="form-section">
+    <h2>Informations générales</h2>
+    
+    <div class="form-group">
+      <label>Nom du modèle *</label>
+      <input type="text" [(ngModel)]="templateName" name="name" 
+             placeholder="Ex: Budget mensuel standard" required>
+    </div>
+
+    <div class="form-group">
+      <label>Description</label>
+      <textarea [(ngModel)]="templateDescription" name="description" rows="3"
+                placeholder="Description optionnelle du modèle"></textarea>
+    </div>
+
+    <div class="form-group checkbox">
+      <label>
+        <input type="checkbox" [(ngModel)]="templateIsDefault" name="isDefault">
+        <span>Définir comme modèle par défaut</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Lignes budgétaires -->
+  <div class="form-section lines-section">
+    <div class="section-header">
+      <h2>Lignes budgétaires</h2>
+      <button (click)="openLineForm()" class="btn-primary">+ Ajouter une ligne</button>
+    </div>
+
+    <div *ngIf="lines.length === 0" class="empty-state">
+      <p>Aucune ligne budgétaire. Cliquez sur "Ajouter une ligne" pour commencer.</p>
+    </div>
+
+    <!-- Affichage groupé par catégorie -->
+    <div *ngIf="lines.length > 0" class="lines-by-category">
+      <div *ngFor="let category of getCategoriesUsed()" class="category-group">
+        <div class="category-header">
+          <div class="category-info">
+            <span class="category-icon" [style.color]="category.color">{{ category.icon }}</span>
+            <span class="category-name">{{ category.name }}</span>
+            
+        </div>
+
+        <div class="category-lines">
+          <div *ngFor="let line of getLinesByCategory(category.id); let i = index" class="line-row">
+            <div class="line-info">
+              <div class="line-label">
+                <strong>{{ line.label }}</strong>
+                <span *ngIf="line.recurrence && line.recurrence !== 'NONE'" 
+                      class="recurrence-badge">🔄 {{ line.recurrence }}</span>
+                <span *ngIf="line.autoCreateTransaction" 
+                      class="auto-badge" title="Création automatique de transaction">⚡</span>
+              </div>
+              <div *ngIf="line.description" class="line-description">{{ line.description }}</div>
+            </div>
+            <div class="line-amount">{{ line.plannedAmount | number:'1.2-2' }} €</div>
+            <div class="line-actions">
+              <button (click)="openEditLineForm(lines.indexOf(line))" class="btn-icon" title="Modifier">✎</button>
+              <button (click)="removeLine(lines.indexOf(line))" class="btn-icon btn-delete" title="Supprimer">🗑</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total général -->
+    <div *ngIf="lines.length > 0" class="grand-total">
+      <strong>Total du modèle :</strong>
+      <span class="total-amount">{{ getTotalPlanned() | number:'1.2-2' }} €</span>
+    </div>
+  </div>
+
+  <!-- Modal formulaire ligne -->
+  <div *ngIf="showLineForm" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>{{ editingLineIndex >= 0 ? 'Modifier' : 'Nouvelle' }} ligne budgétaire</h3>
+        <button (click)="closeLineForm()" class="btn-close">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Catégorie *</label>
+          <select [(ngModel)]="newLine.categoryId" name="lineCategoryId" required>
+            <option [value]="0">-- Sélectionner une catégorie --</option>
+            <option *ngFor="let cat of categories" [value]="cat.id"
+                    [disabled]="!canAddLineToCategory(cat.id) && newLine.categoryId !== cat.id">
+              {{ cat.icon }} {{ cat.name }}
+              <span *ngIf="!canAddLineToCategory(cat.id) && newLine.categoryId !== cat.id">
+                (Max {{ MAX_LINES_PER_CATEGORY }} lignes atteint)
+              </span>
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Libellé *</label>
+          <input type="text" [(ngModel)]="newLine.label" name="lineLabel" 
+                 placeholder="Ex: Loyer, Électricité, Courses alimentaires" required>
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" [(ngModel)]="newLine.description" name="lineDescription" 
+                 placeholder="Description optionnelle">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Montant planifié (€) *</label>
+            <input type="number" [(ngModel)]="newLine.plannedAmount" name="lineAmount" 
+                   step="0.01" min="0" required>
+          </div>
+
+          <div class="form-group">
+            <label>Récurrence</label>
+            <select [(ngModel)]="newLine.recurrence" name="lineRecurrence">
+              <option *ngFor="let pattern of recurrencePatterns" [value]="pattern.value">
+                {{ pattern.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Options de récurrence -->
+        <div *ngIf="newLine.recurrence === 'MONTHLY'" class="form-group">
+          <label>Jour du mois (1-31)</label>
+          <input type="number" [(ngModel)]="newLine.dayOfMonth" name="lineDayOfMonth" 
+                 min="1" max="31">
+        </div>
+
+        <div *ngIf="newLine.recurrence === 'WEEKLY'" class="form-group">
+          <label>Jour de la semaine</label>
+          <select [(ngModel)]="newLine.dayOfWeek" name="lineDayOfWeek">
+            <option [value]="0">Dimanche</option>
+            <option [value]="1">Lundi</option>
+            <option [value]="2">Mardi</option>
+            <option [value]="3">Mercredi</option>
+            <option [value]="4">Jeudi</option>
+            <option [value]="5">Vendredi</option>
+            <option [value]="6">Samedi</option>
+          </select>
+        </div>
+
+        <!-- Création automatique -->
+        <div class="form-group checkbox">
+          <label>
+            <input type="checkbox" [(ngModel)]="newLine.autoCreateTransaction" name="lineAutoCreate">
+            <span>Créer automatiquement une transaction pour cette ligne</span>
+          </label>
+        </div>
+
+        <div *ngIf="newLine.autoCreateTransaction" class="form-group">
+          <label>Description de la transaction auto</label>
+          <input type="text" [(ngModel)]="newLine.autoTransactionDescription" 
+                 name="lineAutoDescription" 
+                 placeholder="Ex: Paiement loyer automatique">
+        </div>
+
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea [(ngModel)]="newLine.notes" name="lineNotes" rows="2"
+                    placeholder="Notes optionnelles"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button (click)="saveLine()" class="btn-primary">
+          {{ editingLineIndex >= 0 ? 'Mettre à jour' : 'Ajouter' }}
+        </button>
+        <button (click)="closeLineForm()" class="btn-secondary">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions principales -->
+  <div class="form-actions">
+    <button (click)="saveTemplate()" class="btn-primary" [disabled]="loading">
+      {{ editMode ? 'Mettre à jour' : 'Créer le modèle' }}
+    </button>
+    <button (click)="cancel()" class="btn-secondary" [disabled]="loading">Annuler</button>
+  </div>
+</div>

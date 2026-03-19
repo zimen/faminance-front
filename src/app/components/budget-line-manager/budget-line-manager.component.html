@@ -1,0 +1,141 @@
+<div class="budget-line-manager">
+  <div class="header">
+    <h3>
+      <span class="category-icon">{{ categoryIcon }}</span>
+      {{ categoryName }}
+      <span class="line-count">({{ lines.length }}/{{ MAX_LINES }} lignes)</span>
+    </h3>
+    <div class="totals">
+      <span class="total-planned">Prévu: {{ getTotalPlanned() | number:'1.2-2' }}€</span>
+      <span class="total-actual">Effectif: {{ getTotalActual() | number:'1.2-2' }}€</span>
+    </div>
+  </div>
+
+  <div class="warning" *ngIf="isApproachingLimit()">
+    ⚠️ Vous approchez de la limite recommandée ({{ lines.length }}/{{ MAX_LINES }} lignes)
+  </div>
+
+  <div class="lines-list">
+    <div *ngIf="lines.length === 0" class="empty-state">
+      <p>Aucune ligne budgétaire pour cette catégorie</p>
+      <button class="btn-add" (click)="openAddForm()">
+        ➕ Ajouter une ligne
+      </button>
+    </div>
+
+    <div *ngFor="let line of lines" class="line-item">
+      <div class="line-header">
+        <span class="status-icon" [style.color]="getStatusColor(line)">
+          {{ getStatusIcon(line) }}
+        </span>
+        <span class="line-label">{{ line.label }}</span>
+        <span class="line-amounts">
+          {{ line.actualAmount | number:'1.2-2' }}€ / {{ line.plannedAmount | number:'1.2-2' }}€
+        </span>
+        <span class="line-percentage">
+          ({{ line.percentageUsed | number:'1.0-0' }}%)
+        </span>
+        <div class="line-actions">
+          <button class="btn-edit" (click)="editLine(line)" title="Modifier">
+            ✏️
+          </button>
+          <button class="btn-delete" (click)="deleteLine(line)" title="Supprimer">
+            🗑️
+          </button>
+        </div>
+      </div>
+
+      <div class="line-progress">
+        <div 
+          class="progress-bar" 
+          [style.width.%]="getProgressWidth(line)"
+          [style.background-color]="getStatusColor(line)">
+        </div>
+      </div>
+
+      <div class="line-details" *ngIf="line.description || line.transactionCount > 0">
+        <div *ngIf="line.description" class="description">
+          {{ line.description }}
+        </div>
+        <div *ngIf="line.transactionCount > 0" class="transaction-info">
+          📌 {{ line.transactionCount }} transaction(s) rattachée(s)
+        </div>
+        <div *ngIf="line.plannedDate" class="planned-date">
+          📅 Prévu le {{ line.plannedDate | date:'dd/MM/yyyy' }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions" *ngIf="lines.length > 0 && canAddLine()">
+    <button class="btn-add" (click)="openAddForm()">
+      ➕ Ajouter une ligne
+    </button>
+  </div>
+
+  <!-- Formulaire de création/modification -->
+  <div class="modal" *ngIf="showForm" (click)="closeForm()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h4>{{ editMode ? 'Modifier' : 'Nouvelle' }} ligne budgétaire</h4>
+        <button class="btn-close" (click)="closeForm()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="lineLabel">Nom de la ligne *</label>
+          <input 
+            id="lineLabel"
+            type="text" 
+            [(ngModel)]="currentLine.label"
+            placeholder="Ex: Courses semaine 1, Essence, etc."
+            class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="lineDescription">Description (optionnel)</label>
+          <textarea 
+            id="lineDescription"
+            [(ngModel)]="currentLine.description"
+            placeholder="Ex: Budget pour les courses de la première semaine"
+            class="form-control"
+            rows="3">
+          </textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="lineAmount">Montant prévu *</label>
+            <input 
+              id="lineAmount"
+              type="number" 
+              [(ngModel)]="currentLine.plannedAmount"
+              step="0.01"
+              min="0"
+              class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="lineDate">Date prévue (optionnel)</label>
+            <input 
+              id="lineDate"
+              type="date" 
+              [(ngModel)]="currentLine.plannedDate"
+              class="form-control">
+          </div>
+        </div>
+
+        <div class="form-info">
+          💡 Astuce : Les transactions pourront être rattachées à cette ligne automatiquement
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeForm()">Annuler</button>
+        <button class="btn-save" (click)="saveLine()">
+          {{ editMode ? 'Mettre à jour' : 'Créer' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

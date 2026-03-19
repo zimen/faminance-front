@@ -1,0 +1,33 @@
+<div class="family-page">
+  <!-- Header de la page -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1 class="page-title">
+        <span class="title-icon">👥</span>
+        {{ family?.name || 'Ma Famille' }}
+      </h1>
+      <p class="page-subtitle" *ngIf="family?.description">
+        {{ family?.description }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Onglets -->
+  <div class="tabs-container">
+    <div class="tabs">
+      <a 
+        *ngFor="let tab of tabs" 
+        [routerLink]="tab.route"
+        [class.active]="isActiveTab(tab.route)"
+        class="tab">
+        <span class="tab-icon">{{ tab.icon }}</span>
+        <span class="tab-label">{{ tab.label }}</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Contenu des onglets -->
+  <div class="tab-content">
+    <router-outlet></router-outlet>
+  </div>
+</div>

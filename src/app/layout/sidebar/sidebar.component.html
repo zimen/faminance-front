@@ -1,0 +1,56 @@
+<div class="sidebar">
+  <!-- Logo / Brand -->
+  <div class="sidebar-header">
+    <h2 class="app-title">💰 Family Finance</h2>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="sidebar-nav">
+    <div *ngFor="let section of sections" class="nav-section">
+      <!-- Section Title -->
+      <div *ngIf="section.title" class="section-title">{{ section.title }}</div>
+
+      <!-- Section Items -->
+      <div *ngFor="let item of section.items" class="nav-item-wrapper">
+        <!-- Parent Item -->
+        <a 
+          class="nav-item" 
+          [class.active]="isActive(item.route)"
+          [class.has-children]="item.children"
+          [class.expanded]="item.expanded"
+          (click)="toggleItem(item)">
+          
+          <span class="nav-icon">{{ item.icon }}</span>
+          <span class="nav-label">{{ item.label }}</span>
+          
+          <!-- Badge -->
+          <span *ngIf="item.badge && item.badge > 0" class="nav-badge">{{ item.badge }}</span>
+          
+          <!-- Expand arrow -->
+          <span *ngIf="item.children" class="nav-arrow">
+            {{ item.expanded ? '▼' : '▶' }}
+          </span>
+        </a>
+
+        <!-- Children Items -->
+        <div *ngIf="item.children && item.expanded" class="nav-children">
+          <a 
+            *ngFor="let child of item.children" 
+            [routerLink]="child.route"
+            routerLinkActive="active"
+            class="nav-item nav-child">
+            
+            <span class="nav-icon">{{ child.icon }}</span>
+            <span class="nav-label">{{ child.label }}</span>
+            <span *ngIf="child.badge && child.badge > 0" class="nav-badge">{{ child.badge }}</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Footer -->
+  <div class="sidebar-footer">
+    <span class="version">v1.0.0</span>
+  </div>
+</div>
