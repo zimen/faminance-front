@@ -3,10 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TransactionService } from '../../core/services/transaction.service';
 import { CategoryService } from '../../core/services/category.service';
+import { BudgetLineService } from '../../core/services/budget-line.service';
+import { BudgetInstanceService } from '../../core/services/budget-instance.service';
 import { Transaction } from '../../core/models/transaction.model';
 import { Category, CategoryType } from '../../core/models/category.model';
 import { FamilyService } from '../../core/services/family.service';
 import { FamilyMember } from '../../core/models/family.model';
+import { BudgetLine } from '../../core/models/budget-line.model';
+import { BudgetInstance } from '../../core/models/budget-template.model';
 
 @Component({
   selector: 'app-transactions',
@@ -29,6 +33,10 @@ export class TransactionsComponent implements OnInit {
   currentYear: number;
   monthName: string = '';
 
+  // Budget et lignes budgétaires
+  currentBudget: BudgetInstance | null = null;
+  availableBudgetLines: Array<BudgetLine & { categoryId: number }> = [];
+
   // Filtres
   filterType: CategoryType | 'ALL' = 'ALL';
   filterCategoryId: number | 'ALL' = 'ALL';
@@ -41,6 +49,8 @@ export class TransactionsComponent implements OnInit {
   constructor(
     private transactionService: TransactionService,
     private categoryService: CategoryService,
+    private budgetLineService: BudgetLineService,
+    private budgetInstanceService: BudgetInstanceService,
     private familyService: FamilyService
   ) {
     const now = new Date();
@@ -57,6 +67,7 @@ export class TransactionsComponent implements OnInit {
         // Charger toutes les données quand la famille est disponible
         this.loadCategories();
         this.loadMembers();
+        this.loadCurrentBudget();
         this.loadTransactions();
       } else {
         this.selectedFamilyId = null;
@@ -65,8 +76,52 @@ export class TransactionsComponent implements OnInit {
         this.members = [];
         this.transactions = [];
         this.filteredTransactions = [];
+        this.currentBudget = null;
+        this.availableBudgetLines = [];
       }
     });
+  }
+
+  loadCurrentBudget(): void {
+    if (!this.selectedFamilyId) return;
+
+    this.budgetInstanceService.getBudgetByMonth(
+      this.selectedFamilyId,
+      this.currentMonth,
+      this.currentYear
+    ).subscribe({
+      next: (budget) => {
+        this.currentBudget = budget;
+        this.loadAvailableBudgetLines();
+      },
+      error: (err) => {
+        // Pas de budget pour ce mois, c'est normal
+        this.currentBudget = null;
+        this.availableBudgetLines = [];
+      }
+    });
+  }
+
+  loadAvailableBudgetLines(): void {
+    if (!this.selectedFamilyId || !this.currentBudget) {
+      this.availableBudgetLines = [];
+      return;
+    }
+
+    // Extraire toutes les lignes de toutes les catégories avec leur categoryId
+    this.availableBudgetLines = [];
+    if (this.currentBudget.linesByCategory) {
+      this.currentBudget.linesByCategory.forEach(category => {
+        if (category.lines) {
+          // Enrichir chaque ligne avec le categoryId
+          const enrichedLines = category.lines.map(line => ({
+            ...line,
+            categoryId: category.categoryId
+          }));
+          this.availableBudgetLines.push(...enrichedLines);
+        }
+      });
+    }
   }
 
   loadCategories(): void {
@@ -207,6 +262,7 @@ export class TransactionsComponent implements OnInit {
       this.currentMonth--;
     }
     this.monthName = this.getMonthName(this.currentMonth);
+    this.loadCurrentBudget();
     this.loadTransactions();
   }
 
@@ -218,6 +274,7 @@ export class TransactionsComponent implements OnInit {
       this.currentMonth++;
     }
     this.monthName = this.getMonthName(this.currentMonth);
+    this.loadCurrentBudget();
     this.loadTransactions();
   }
 
@@ -231,6 +288,18 @@ export class TransactionsComponent implements OnInit {
 
   getFilteredCategories(): Category[] {
     return this.categories.filter(c => c.type === this.currentTransaction.type);
+  }
+
+  getFilteredBudgetLines(): BudgetLine[] {
+    if (!this.currentTransaction.categoryId || this.currentTransaction.categoryId === 0) {
+      return [];
+    }
+    return this.availableBudgetLines.filter(line => line.categoryId === Number(this.currentTransaction.categoryId));
+  }
+
+  getBudgetLineDisplay(line: BudgetLine): string {
+    const remaining = line.plannedAmount - line.actualAmount;
+    return `${line.label} (${remaining.toFixed(2)}€ restants sur ${line.plannedAmount.toFixed(2)}€)`;
   }
 
   private getEmptyTransaction(): Transaction {

@@ -1,15 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { BudgetTemplateService } from '../../core/services/budget-template.service';
-import { CategoryService } from '../../core/services/category.service';
+import { BudgetInstanceService } from '../../core/services/budget-instance.service';
 import { FamilyService } from '../../core/services/family.service';
-import {
-  BudgetTemplate,
-  BudgetTemplateRequest,
-  BudgetTemplateItemRequest
-} from '../../core/models/budget-template.model';
-import { Category } from '../../core/models/category.model';
+import { BudgetTemplate } from '../../core/models/budget-template.model';
 
 @Component({
   selector: 'app-budget-template',
@@ -20,24 +16,8 @@ import { Category } from '../../core/models/category.model';
 })
 export class BudgetTemplateComponent implements OnInit {
   templates: BudgetTemplate[] = [];
-  categories: Category[] = [];
-  showForm = false;
-  editMode = false;
-  selectedTemplate?: BudgetTemplate;
 
-  // Formulaire
-  templateName = '';
-  templateDescription = '';
-  templateIsDefault = false;
-  templateItems: BudgetTemplateItemRequest[] = [];
-
-  // Nouvel item
-  showItemForm = false;
-  newItemCategoryId = 0;
-  newItemPlannedAmount = 0;
-  newItemNotes = '';
-
-  // Mois pour application
+  // Modal application
   showApplyModal = false;
   applyTemplateId = 0;
   applyMonth: number;
@@ -52,8 +32,9 @@ export class BudgetTemplateComponent implements OnInit {
 
   constructor(
     private budgetTemplateService: BudgetTemplateService,
-    private categoryService: CategoryService,
-    private familyService: FamilyService
+    private budgetInstanceService: BudgetInstanceService,
+    private familyService: FamilyService,
+    private router: Router
   ) {
     const now = new Date();
     this.applyMonth = now.getMonth() + 1;
@@ -65,14 +46,10 @@ export class BudgetTemplateComponent implements OnInit {
     this.familyService.selectedFamily$.subscribe(family => {
       if (family) {
         this.selectedFamilyId = family.id;
-        // Charger les données quand la famille est disponible
         this.loadTemplates();
-        this.loadCategories();
       } else {
         this.selectedFamilyId = null;
-        // Réinitialiser les données si aucune famille n'est sélectionnée
         this.templates = [];
-        this.categories = [];
       }
     });
   }
@@ -86,6 +63,14 @@ export class BudgetTemplateComponent implements OnInit {
     this.budgetTemplateService.getTemplates(this.selectedFamilyId).subscribe({
       next: (templates) => {
         this.templates = templates;
+        console.log('Templates chargés:', templates);
+        // Vérifier la structure des lignes
+        if (templates.length > 0) {
+          console.log('Premier template items:', templates[0].items);
+          if (templates[0].items.length > 0) {
+            console.log('Premier item lines:', templates[0].items[0].lines);
+          }
+        }
       },
       error: (err) => {
         console.error('Erreur lors du chargement des templates', err);
@@ -94,90 +79,12 @@ export class BudgetTemplateComponent implements OnInit {
     });
   }
 
-  loadCategories(): void {
-    if (!this.selectedFamilyId) return;
-
-    this.categoryService.getCategories(this.selectedFamilyId).subscribe({
-      next: (categories) => {
-        this.categories = categories.filter(c => c.active);
-      },
-      error: (err) => console.error('Erreur lors du chargement des catégories', err)
-    });
+  navigateToCreate(): void {
+    this.router.navigate(['/budget-templates/create']);
   }
 
-  openCreateForm(): void {
-    this.editMode = false;
-    this.resetForm();
-    this.showForm = true;
-  }
-
-  openEditForm(template: BudgetTemplate): void {
-    this.editMode = true;
-    this.selectedTemplate = template;
-    this.templateName = template.name;
-    this.templateDescription = template.description || '';
-    this.templateIsDefault = template.isDefault;
-    this.templateItems = template.items.map(item => ({
-      categoryId: item.categoryId,
-      plannedAmount: item.plannedAmount,
-      notes: item.notes,
-      displayOrder: item.displayOrder
-    }));
-    this.showForm = true;
-  }
-
-  saveTemplate(): void {
-    if (!this.selectedFamilyId) return;
-
-    if (!this.templateName.trim()) {
-      this.errorMessage = 'Le nom du modèle est requis';
-      return;
-    }
-
-    if (this.templateItems.length === 0) {
-      this.errorMessage = 'Ajoutez au moins une catégorie au modèle';
-      return;
-    }
-
-    const request: BudgetTemplateRequest = {
-      name: this.templateName,
-      description: this.templateDescription || undefined,
-      isDefault: this.templateIsDefault,
-      items: this.templateItems.map((item, index) => ({
-        ...item,
-        displayOrder: index
-      }))
-    };
-
-    if (this.editMode && this.selectedTemplate) {
-      this.budgetTemplateService.updateTemplate(this.selectedFamilyId, this.selectedTemplate.id, request)
-        .subscribe({
-          next: () => {
-            this.successMessage = 'Modèle mis à jour avec succès';
-            this.closeForm();
-            this.loadTemplates();
-            setTimeout(() => this.successMessage = '', 3000);
-          },
-          error: (err) => {
-            console.error('Erreur lors de la mise à jour', err);
-            this.errorMessage = 'Erreur lors de la mise à jour du modèle';
-          }
-        });
-    } else {
-      this.budgetTemplateService.createTemplate(this.selectedFamilyId, request)
-        .subscribe({
-          next: () => {
-            this.successMessage = 'Modèle créé avec succès';
-            this.closeForm();
-            this.loadTemplates();
-            setTimeout(() => this.successMessage = '', 3000);
-          },
-          error: (err) => {
-            console.error('Erreur lors de la création', err);
-            this.errorMessage = 'Erreur lors de la création du modèle';
-          }
-        });
-    }
+  navigateToEdit(templateId: number): void {
+    this.router.navigate(['/budget-templates', templateId, 'edit']);
   }
 
   deleteTemplate(templateId: number): void {
@@ -206,89 +113,32 @@ export class BudgetTemplateComponent implements OnInit {
   applyTemplate(): void {
     if (!this.selectedFamilyId) return;
 
-    this.budgetTemplateService.applyTemplate(
+    this.budgetInstanceService.generateFromTemplate(
       this.selectedFamilyId,
       this.applyTemplateId,
       this.applyMonth,
       this.applyYear
     ).subscribe({
-      next: (budgets) => {
-        this.successMessage = `Modèle appliqué ! ${budgets.length} budget(s) créé(s)`;
+      next: (budgetInstance) => {
+        const categories = budgetInstance.linesByCategory || [];
+        const linesCount = categories.reduce(
+          (sum, cat) => sum + cat.lines.length, 
+          0
+        );
+        this.successMessage = `Modèle appliqué ! Budget créé avec ${categories.length} catégorie(s) et ${linesCount} ligne(s) budgétaire(s)`;
         this.closeApplyModal();
-        setTimeout(() => this.successMessage = '', 3000);
+        setTimeout(() => this.successMessage = '', 5000);
       },
       error: (err) => {
         console.error('Erreur lors de l\'application du modèle', err);
-        this.errorMessage = 'Erreur lors de l\'application du modèle';
+        this.errorMessage = err.error?.message || 'Erreur lors de l\'application du modèle';
+        setTimeout(() => this.errorMessage = '', 5000);
       }
     });
   }
 
-  openItemForm(): void {
-    this.newItemCategoryId = 0;
-    this.newItemPlannedAmount = 0;
-    this.newItemNotes = '';
-    this.showItemForm = true;
-  }
-
-  addItem(): void {
-    if (this.newItemCategoryId === 0) {
-      this.errorMessage = 'Sélectionnez une catégorie';
-      return;
-    }
-
-    if (this.newItemPlannedAmount <= 0) {
-      this.errorMessage = 'Le montant doit être supérieur à 0';
-      return;
-    }
-
-    // Vérifier que la catégorie n'est pas déjà ajoutée
-    if (this.templateItems.some(item => item.categoryId === this.newItemCategoryId)) {
-      this.errorMessage = 'Cette catégorie est déjà dans le modèle';
-      return;
-    }
-
-    this.templateItems.push({
-      categoryId: this.newItemCategoryId,
-      plannedAmount: this.newItemPlannedAmount,
-      notes: this.newItemNotes || undefined,
-      displayOrder: this.templateItems.length
-    });
-
-    this.closeItemForm();
-    this.errorMessage = '';
-  }
-
-  removeItem(index: number): void {
-    this.templateItems.splice(index, 1);
-  }
-
-  moveItemUp(index: number): void {
-    if (index === 0) return;
-    const temp = this.templateItems[index];
-    this.templateItems[index] = this.templateItems[index - 1];
-    this.templateItems[index - 1] = temp;
-  }
-
-  moveItemDown(index: number): void {
-    if (index === this.templateItems.length - 1) return;
-    const temp = this.templateItems[index];
-    this.templateItems[index] = this.templateItems[index + 1];
-    this.templateItems[index + 1] = temp;
-  }
-
-  getCategoryById(categoryId: number): Category | undefined {
-    return this.categories.find(c => c.id === categoryId);
-  }
-
-  getAvailableCategories(): Category[] {
-    return this.categories.filter(
-      cat => !this.templateItems.some(item => item.categoryId === cat.id)
-    );
-  }
-
-  getTotalPlanned(): number {
-    return this.templateItems.reduce((sum, item) => sum + item.plannedAmount, 0);
+  closeApplyModal(): void {
+    this.showApplyModal = false;
   }
 
   getMonthName(month: number): string {
@@ -297,30 +147,5 @@ export class BudgetTemplateComponent implements OnInit {
       'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
     ];
     return months[month - 1];
-  }
-
-  closeForm(): void {
-    this.showForm = false;
-    this.resetForm();
-  }
-
-  closeItemForm(): void {
-    this.showItemForm = false;
-    this.newItemCategoryId = 0;
-    this.newItemPlannedAmount = 0;
-    this.newItemNotes = '';
-  }
-
-  closeApplyModal(): void {
-    this.showApplyModal = false;
-  }
-
-  resetForm(): void {
-    this.templateName = '';
-    this.templateDescription = '';
-    this.templateIsDefault = false;
-    this.templateItems = [];
-    this.selectedTemplate = undefined;
-    this.errorMessage = '';
   }
 }

@@ -127,7 +127,7 @@ export class CategoriesComponent implements OnInit {
 
     // Filtre par type
     if (this.systemFilterType !== 'ALL') {
-      filtered = filtered.filter(c => c.type === this.systemFilterType);
+      filtered = filtered.filter(c => c.defaultType === this.systemFilterType);
     }
 
     // Exclure les catégories déjà ajoutées à la famille
@@ -159,7 +159,7 @@ export class CategoriesComponent implements OnInit {
     }
 
     if (confirm(`Ajouter "${systemCategory.name}" à vos catégories ?`)) {
-      this.categoryService.addSystemCategoryToFamily(this.selectedFamilyId, systemCategory.id)
+      this.categoryService.addSystemCategoryToFamily(this.selectedFamilyId, systemCategory)
         .subscribe({
           next: () => {
             this.loadCategories();

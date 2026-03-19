@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { OnboardingService } from '../../../core/services/onboarding.service';
 
 /**
  * LoginComponent - Page de connexion
@@ -22,6 +23,7 @@ export class LoginComponent {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
+    private onboardingService: OnboardingService,
     private router: Router
   ) {
     this.loginForm = this.fb.group({
@@ -37,9 +39,15 @@ export class LoginComponent {
 
       this.authService.login(this.loginForm.value).subscribe({
         next: () => {
-          // Redirection vers les familles ou le returnUrl
-          const returnUrl = new URLSearchParams(window.location.search).get('returnUrl');
-          this.router.navigate([returnUrl || '/families']);
+          // Vérifier si l'onboarding est complété
+          if (!this.onboardingService.isOnboardingComplete()) {
+            // Reprendre l'onboarding là où il a été interrompu
+            this.onboardingService.resumeOnboarding();
+          } else {
+            // Redirection vers les familles ou le returnUrl
+            const returnUrl = new URLSearchParams(window.location.search).get('returnUrl');
+            this.router.navigate([returnUrl || '/dashboard']);
+          }
         },
         error: (error) => {
           this.loading = false;

@@ -1,7 +1,7 @@
 <div class="budget-templates-container">
   <div class="header">
     <h1>Modèles de Budget</h1>
-    <button (click)="openCreateForm()" class="btn-primary">+ Nouveau Modèle</button>
+    <button (click)="navigateToCreate()" class="btn-primary">+ Nouveau Modèle</button>
   </div>
 
   <!-- Messages -->
@@ -25,7 +25,7 @@
           <span *ngIf="template.isDefault" class="badge-default">Par défaut</span>
         </div>
         <div class="template-actions">
-          <button (click)="openEditForm(template)" class="btn-icon" title="Modifier">✎</button>
+          <button (click)="navigateToEdit(template.id)" class="btn-icon" title="Modifier">✎</button>
           <button (click)="openApplyModal(template.id)" class="btn-icon btn-apply" title="Appliquer">▶</button>
           <button (click)="deleteTemplate(template.id)" class="btn-icon btn-delete" title="Supprimer">🗑</button>
         </div>
@@ -52,175 +52,67 @@
             {{ item.categoryIcon }}
           </div>
           <div class="item-details">
-            <div class="item-name">{{ item.categoryName }}</div>
+            <div class="item-name">
+              {{ item.categoryName }}
+              <span *ngIf="item.lines && item.lines.length > 0" class="lines-badge" 
+                    [title]="item.lines.length + ' ligne(s) budgétaire(s)'">
+                📝 {{ item.lines.length }}
+              </span>
+              <!-- Debug -->
+              <small style="color: red;" *ngIf="!item.lines">[Aucune ligne définie]</small>
+              <small style="color: orange;" *ngIf="item.lines && item.lines.length === 0">[Tableau vide]</small>
+            </div>
             <div *ngIf="item.notes" class="item-notes">{{ item.notes }}</div>
-          </div>
-          <div class="item-amount">
-            {{ item.plannedAmount | number:'1.2-2' }} €
-            <span class="item-percentage">({{ item.percentage }}%)</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Formulaire -->
-  <div *ngIf="showForm" class="modal">
-    <div class="modal-content large">
-      <div class="modal-header">
-        <h2>{{ editMode ? 'Modifier' : 'Nouveau' }} Modèle de Budget</h2>
-        <button (click)="closeForm()" class="btn-close">✕</button>
-      </div>
-
-      <form (ngSubmit)="saveTemplate()">
-        <div class="form-group">
-          <label>Nom du modèle *</label>
-          <input type="text" [(ngModel)]="templateName" name="name" required 
-                 placeholder="Ex: Budget mensuel standard">
-        </div>
-
-        <div class="form-group">
-          <label>Description</label>
-          <textarea [(ngModel)]="templateDescription" name="description" rows="2"
-                    placeholder="Description optionnelle du modèle"></textarea>
-        </div>
-
-        <div class="form-group checkbox">
-          <label>
-            <input type="checkbox" [(ngModel)]="templateIsDefault" name="isDefault">
-            Définir comme modèle par défaut
-          </label>
-        </div>
-
-        <div class="items-section">
-          <div class="items-header">
-            <h3>Catégories et Montants</h3>
-            <button type="button" (click)="openItemForm()" class="btn-secondary">
-              + Ajouter une catégorie
-            </button>
-          </div>
-
-          <div *ngIf="templateItems.length === 0" class="empty-items">
-            Aucune catégorie ajoutée. Cliquez sur "Ajouter une catégorie" pour commencer.
-          </div>
-
-          <div class="items-list">
-            <div *ngFor="let item of templateItems; let i = index" class="item-row">
-              <div class="item-order">
-                <button type="button" (click)="moveItemUp(i)" [disabled]="i === 0" 
-                        class="btn-move">▲</button>
-                <button type="button" (click)="moveItemDown(i)" 
-                        [disabled]="i === templateItems.length - 1" class="btn-move">▼</button>
+            <!-- Afficher les lignes si présentes -->
+            <div *ngIf="item.lines && item.lines.length > 0" class="item-lines-preview">
+              <div *ngFor="let line of item.lines.slice(0, 3)" class="line-preview">
+                • {{ line.label }}: {{ line.plannedAmount | number:'1.2-2' }} €
+                <span *ngIf="line.recurrence && line.recurrence !== 'NONE'" class="recurrence-icon" 
+                      [title]="'Récurrence: ' + line.recurrence">🔄</span>
               </div>
-              <div class="item-category">
-                <span class="category-icon" [style.color]="getCategoryById(item.categoryId)?.color">
-                  {{ getCategoryById(item.categoryId)?.icon }}
-                </span>
-                <span class="category-name">{{ getCategoryById(item.categoryId)?.name }}</span>
+              <div *ngIf="item.lines.length > 3" class="more-lines">
+                + {{ item.lines.length - 3 }} ligne(s) de plus...
               </div>
-              <div class="item-amount-input">
-                <input type="number" [(ngModel)]="item.plannedAmount" 
-                       [name]="'amount-' + i" step="0.01" min="0" required>
-                <span class="currency">€</span>
-              </div>
-              <div class="item-notes-input">
-                <input type="text" [(ngModel)]="item.notes" 
-                       [name]="'notes-' + i" placeholder="Notes (optionnel)">
-              </div>
-              <button type="button" (click)="removeItem(i)" class="btn-remove">🗑</button>
             </div>
           </div>
-
-          <div *ngIf="templateItems.length > 0" class="items-total">
-            <strong>Total:</strong>
-            <span class="total-amount">{{ getTotalPlanned() | number:'1.2-2' }} €</span>
+          <div class="item-amount">
+            {{ item.totalPlannedAmount || item.plannedAmount | number:'1.2-2' }} €
+            <span class="item-percentage" *ngIf="item.percentage">({{ item.percentage }}%)</span>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
 
-        <div class="form-actions">
-          <button type="submit" class="btn-primary">
-            {{ editMode ? 'Mettre à jour' : 'Créer' }}
-          </button>
-          <button type="button" (click)="closeForm()" class="btn-secondary">Annuler</button>
+  <!-- Modal d'application -->
+  <div *ngIf="showApplyModal" class="modal-overlay" (click)="closeApplyModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Appliquer le Modèle</h2>
+        <button class="close-btn" (click)="closeApplyModal()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <p>Choisissez le mois pour lequel appliquer ce modèle :</p>
+
+        <div class="form-group">
+          <label for="applyMonth">Mois</label>
+          <select id="applyMonth" [(ngModel)]="applyMonth" class="form-control">
+            <option *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]" [value]="m">
+              {{ getMonthName(m) }}
+            </option>
+          </select>
         </div>
-      </form>
-    </div>
-  </div>
 
-  <!-- Modal Ajouter Item -->
-  <div *ngIf="showItemForm" class="modal">
-    <div class="modal-content small">
-      <div class="modal-header">
-        <h3>Ajouter une catégorie</h3>
-        <button (click)="closeItemForm()" class="btn-close">✕</button>
+        <div class="form-group">
+          <label for="applyYear">Année</label>
+          <input type="number" id="applyYear" [(ngModel)]="applyYear" class="form-control" />
+        </div>
       </div>
 
-      <div class="form-group">
-        <label>Catégorie *</label>
-        <select [(ngModel)]="newItemCategoryId" name="categoryId" required>
-          <option [value]="0">-- Sélectionner --</option>
-          <option *ngFor="let cat of getAvailableCategories()" [value]="cat.id">
-            {{ cat.icon }} {{ cat.name }}
-          </option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Montant planifié (€) *</label>
-        <input type="number" [(ngModel)]="newItemPlannedAmount" name="amount" 
-               step="0.01" min="0" required>
-      </div>
-
-      <div class="form-group">
-        <label>Notes</label>
-        <input type="text" [(ngModel)]="newItemNotes" name="notes" 
-               placeholder="Notes optionnelles">
-      </div>
-
-      <div class="form-actions">
-        <button (click)="addItem()" class="btn-primary">Ajouter</button>
-        <button (click)="closeItemForm()" class="btn-secondary">Annuler</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Appliquer Template -->
-  <div *ngIf="showApplyModal" class="modal">
-    <div class="modal-content small">
-      <div class="modal-header">
-        <h3>Appliquer le modèle</h3>
-        <button (click)="closeApplyModal()" class="btn-close">✕</button>
-      </div>
-
-      <p>Sélectionnez le mois pour lequel vous souhaitez créer les budgets à partir de ce modèle :</p>
-
-      <div class="form-group">
-        <label>Mois</label>
-        <select [(ngModel)]="applyMonth" name="month">
-          <option [value]="1">Janvier</option>
-          <option [value]="2">Février</option>
-          <option [value]="3">Mars</option>
-          <option [value]="4">Avril</option>
-          <option [value]="5">Mai</option>
-          <option [value]="6">Juin</option>
-          <option [value]="7">Juillet</option>
-          <option [value]="8">Août</option>
-          <option [value]="9">Septembre</option>
-          <option [value]="10">Octobre</option>
-          <option [value]="11">Novembre</option>
-          <option [value]="12">Décembre</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Année</label>
-        <input type="number" [(ngModel)]="applyYear" name="year" 
-               min="2020" max="2100">
-      </div>
-
-      <div class="form-actions">
-        <button (click)="applyTemplate()" class="btn-primary">Appliquer</button>
+      <div class="modal-footer">
         <button (click)="closeApplyModal()" class="btn-secondary">Annuler</button>
+        <button (click)="applyTemplate()" class="btn-primary">Appliquer</button>
       </div>
     </div>
   </div>

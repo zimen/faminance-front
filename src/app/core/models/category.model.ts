@@ -41,12 +41,14 @@ export interface CategoryRequest {
  */
 export interface SystemCategory {
   id: number;
+  key?: string;
   name: string;
-  type: CategoryType;
+  defaultType: CategoryType;  // Type par défaut (INCOME ou EXPENSE)
   icon: string;
-  color: string;
+  defaultColor: string;       // Couleur par défaut
   description?: string;
   tags?: string[];
-  usageCount?: number; // Nombre de familles utilisant cette catégorie
-  recommended?: boolean; // true si catégorie recommandée
+  displayOrder?: number;
+  usageCount?: number;        // Nombre de familles utilisant cette catégorie
+  recommended?: boolean;      // true si catégorie recommandée
 }

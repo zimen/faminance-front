@@ -222,6 +222,14 @@
   border-color: #3498db;
 }
 
+.form-hint {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  color: #7f8c8d;
+  font-style: italic;
+}
+
 .form-actions {
   display: flex;
   gap: 10px;
@@ -291,6 +299,13 @@
   font-size: 14px;
   color: #7f8c8d;
   margin-bottom: 3px;
+}
+
+.transaction-budget-line {
+  font-size: 13px;
+  color: #3498db;
+  margin-bottom: 3px;
+  font-style: italic;
 }
 
 .transaction-member {

@@ -1,11 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { BudgetService } from '../../core/services/budget.service';
+import { BudgetInstanceService } from '../../core/services/budget-instance.service';
 import { CategoryService } from '../../core/services/category.service';
-import { Budget } from '../../core/models/budget.model';
+import { BudgetInstance, BudgetCategoryInstance } from '../../core/models/budget-template.model';
+import { BudgetLine, BudgetLineRequest } from '../../core/models/budget-line.model';
 import { Category, CategoryType } from '../../core/models/category.model';
 import { FamilyService } from '../../core/services/family.service';
+import { BudgetLineService } from '../../core/services/budget-line.service';
 
 @Component({
   selector: 'app-budget',
@@ -15,12 +17,25 @@ import { FamilyService } from '../../core/services/family.service';
   styleUrls: ['./budget.component.css']
 })
 export class BudgetComponent implements OnInit {
-  budgets: Budget[] = [];
+  budgetInstance: BudgetInstance | null = null;
   categories: Category[] = [];
-  showForm = false;
-  editMode = false;
   
-  currentBudget: Budget = this.getEmptyBudget();
+  // Exposer l'enum pour le template
+  CategoryType = CategoryType;
+  
+  // Wizard création budget
+  showBudgetWizard = false;
+  wizardLines: Array<{ categoryId: number; line: BudgetLineRequest; tempId: string }> = [];
+  wizardCurrentLine: BudgetLineRequest & { categoryId: number } = this.getEmptyWizardLine();
+  wizardEditingIndex: number | null = null;
+  isCreatingBudget = false;
+  
+  // Gestion des lignes (pour édition budget existant)
+  showLineForm = false;
+  editingCategoryId: number | null = null;
+  editingLineId: number | null = null;
+  currentLine: BudgetLineRequest = this.getEmptyLine();
+  availableCategoryType: CategoryType | null = null;
   
   currentMonth: number;
   currentYear: number;
@@ -30,7 +45,8 @@ export class BudgetComponent implements OnInit {
   private selectedFamilyId: number | null = null;
 
   constructor(
-    private budgetService: BudgetService,
+    private budgetInstanceService: BudgetInstanceService,
+    private budgetLineService: BudgetLineService,
     private categoryService: CategoryService,
     private familyService: FamilyService
   ) {
@@ -47,12 +63,12 @@ export class BudgetComponent implements OnInit {
         this.selectedFamilyId = family.id;
         // Charger les données quand la famille est disponible
         this.loadCategories();
-        this.loadBudgets();
+        this.loadBudget();
       } else {
         this.selectedFamilyId = null;
         // Réinitialiser les données si aucune famille n'est sélectionnée
         this.categories = [];
-        this.budgets = [];
+        this.budgetInstance = null;
       }
     });
   }
@@ -65,107 +81,326 @@ export class BudgetComponent implements OnInit {
 
     this.categoryService.getCategories(this.selectedFamilyId).subscribe({
       next: (categories) => {
-        this.categories = categories.filter(c => c.type === CategoryType.EXPENSE);
+        this.categories = categories.filter(c => c.active);
       },
       error: (err) => console.error('Erreur lors du chargement des catégories', err)
     });
   }
 
-  loadBudgets(): void {
+  loadBudget(): void {
     if (!this.selectedFamilyId) {
       console.error('Aucune famille sélectionnée');
       return;
     }
 
-    this.budgetService.getBudgetsByMonthAndYear(this.selectedFamilyId, this.currentMonth, this.currentYear)
-      .subscribe({
-        next: (budgets: Budget[]) => {
-          this.budgets = budgets.sort((a: Budget, b: Budget) => {
-            const nameA = a.category?.name || '';
-            const nameB = b.category?.name || '';
-            return nameA.localeCompare(nameB);
-          });
-        },
-        error: (err: any) => console.error('Erreur lors du chargement des budgets', err)
-      });
+    this.budgetInstanceService.getBudgetByMonth(
+      this.selectedFamilyId,
+      this.currentMonth,
+      this.currentYear
+    ).subscribe({
+      next: (budget: BudgetInstance) => {
+        this.budgetInstance = budget;
+        console.log('Budget chargé:', budget);
+      },
+      error: (err: any) => {
+        // Pas de budget pour ce mois = normal
+        console.log('Aucun budget pour ce mois');
+        this.budgetInstance = null;
+      }
+    });
   }
 
-  openAddForm(): void {
-    this.currentBudget = this.getEmptyBudget();
-    this.editMode = false;
-    this.showForm = true;
+  // ========================================
+  // Création budget
+  // ========================================
+
+  // ========================================
+  // Wizard de création budget
+  // ========================================
+
+  openBudgetWizard(): void {
+    this.wizardLines = [];
+    this.wizardCurrentLine = this.getEmptyWizardLine();
+    this.wizardEditingIndex = null;
+    this.showBudgetWizard = true;
   }
 
-  editBudget(budget: Budget): void {
-    this.currentBudget = { ...budget };
-    this.editMode = true;
-    this.showForm = true;
-  }
-
-  saveBudget(): void {
-    if (!this.selectedFamilyId) {
-      console.error('Aucune famille sélectionnée');
-      return;
-    }
-
-    this.currentBudget.month = this.currentMonth;
-    this.currentBudget.year = this.currentYear;
-
-    if (this.editMode && this.currentBudget.id) {
-      this.budgetService.updateBudget(this.selectedFamilyId, this.currentBudget.id, this.currentBudget as any)
-        .subscribe({
-          next: () => {
-            this.loadBudgets();
-            this.closeForm();
-          },
-          error: (err: any) => console.error('Erreur lors de la mise à jour', err)
-        });
-    } else {
-      this.budgetService.createBudget(this.selectedFamilyId, this.currentBudget as any)
-        .subscribe({
-          next: () => {
-            this.loadBudgets();
-            this.closeForm();
-          },
-          error: (err: any) => console.error('Erreur lors de la création', err)
-        });
-    }
-  }
-
-  deleteBudget(id: number): void {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce budget ?')) {
-      if (!this.selectedFamilyId) {
-        console.error('Aucune famille sélectionnée');
+  closeBudgetWizard(): void {
+    if (this.wizardLines.length > 0) {
+      if (!confirm('Vous avez des lignes non sauvegardées. Voulez-vous vraiment quitter ?')) {
         return;
       }
-
-      this.budgetService.deleteBudget(this.selectedFamilyId, id).subscribe({
-        next: () => this.loadBudgets(),
-        error: (err: any) => console.error('Erreur lors de la suppression', err)
-      });
     }
+    this.showBudgetWizard = false;
+    this.wizardLines = [];
+    this.wizardCurrentLine = this.getEmptyWizardLine();
+    this.wizardEditingIndex = null;
   }
 
-  recalculateBudgets(): void {
-    if (!this.selectedFamilyId) {
-      console.error('Aucune famille sélectionnée');
+  addWizardLine(): void {
+    if (!this.wizardCurrentLine.categoryId || !this.wizardCurrentLine.label || !this.wizardCurrentLine.plannedAmount) {
       return;
     }
 
-    this.budgetService.recalculateBudgets(this.selectedFamilyId, this.currentMonth, this.currentYear)
-      .subscribe({
-        next: () => {
-          this.loadBudgets();
-          alert('Budgets recalculés avec succès');
-        },
-        error: (err: any) => console.error('Erreur lors du recalcul', err)
+    if (this.wizardEditingIndex !== null) {
+      // Modification d'une ligne existante
+      this.wizardLines[this.wizardEditingIndex] = {
+        categoryId: this.wizardCurrentLine.categoryId,
+        line: { ...this.wizardCurrentLine },
+        tempId: this.wizardLines[this.wizardEditingIndex].tempId
+      };
+      this.wizardEditingIndex = null;
+    } else {
+      // Ajout d'une nouvelle ligne
+      this.wizardLines.push({
+        categoryId: this.wizardCurrentLine.categoryId,
+        line: { ...this.wizardCurrentLine },
+        tempId: Date.now().toString() + Math.random()
       });
+    }
+
+    // Garder la catégorie sélectionnée, vider le reste
+    const catId = this.wizardCurrentLine.categoryId;
+    this.wizardCurrentLine = this.getEmptyWizardLine();
+    this.wizardCurrentLine.categoryId = catId;
   }
 
-  closeForm(): void {
-    this.showForm = false;
-    this.currentBudget = this.getEmptyBudget();
+  editWizardLine(index: number): void {
+    const item = this.wizardLines[index];
+    this.wizardCurrentLine = {
+      ...item.line,
+      categoryId: item.categoryId
+    };
+    this.wizardEditingIndex = index;
   }
+
+  deleteWizardLine(index: number): void {
+    this.wizardLines.splice(index, 1);
+    if (this.wizardEditingIndex === index) {
+      this.wizardEditingIndex = null;
+      this.wizardCurrentLine = this.getEmptyWizardLine();
+    }
+  }
+
+  getWizardLinesByCategory(): Array<{ category: Category; lines: Array<any> }> {
+    const grouped: { [key: number]: Array<any> } = {};
+    
+    this.wizardLines.forEach((item, index) => {
+      if (!grouped[item.categoryId]) {
+        grouped[item.categoryId] = [];
+      }
+      grouped[item.categoryId].push({ ...item, index });
+    });
+
+    return Object.keys(grouped).map(catId => {
+      const category = this.categories.find(c => c.id === Number(catId))!;
+      return {
+        category,
+        lines: grouped[Number(catId)]
+      };
+    });
+  }
+
+  getWizardIncomeCategories(): Array<{ category: Category; lines: Array<any> }> {
+    return this.getWizardLinesByCategory().filter(g => g.category.type === CategoryType.INCOME);
+  }
+
+  getWizardExpenseCategories(): Array<{ category: Category; lines: Array<any> }> {
+    return this.getWizardLinesByCategory().filter(g => g.category.type === CategoryType.EXPENSE);
+  }
+
+  getCategoryTotalInWizard(lines: Array<any>): number {
+    return lines.reduce((sum, l) => sum + (l.line.plannedAmount || 0), 0);
+  }
+
+  getWizardTotal(): number {
+    return this.wizardLines.reduce((sum, item) => sum + (item.line.plannedAmount || 0), 0);
+  }
+
+  getWizardTotalIncome(): number {
+    return this.wizardLines
+      .filter(item => {
+        const cat = this.categories.find(c => c.id === Number(item.categoryId));
+        return cat?.type === CategoryType.INCOME;
+      })
+      .reduce((sum, item) => sum + (item.line.plannedAmount || 0), 0);
+  }
+
+  getWizardTotalExpenses(): number {
+    return this.wizardLines
+      .filter(item => {
+        const cat = this.categories.find(c => c.id === Number(item.categoryId));
+        return cat?.type === CategoryType.EXPENSE;
+      })
+      .reduce((sum, item) => sum + (item.line.plannedAmount || 0), 0);
+  }
+
+  getWizardBalance(): number {
+    return this.getWizardTotalIncome() - this.getWizardTotalExpenses();
+  }
+
+  getBudgetIncomeCategories(): BudgetCategoryInstance[] {
+    return this.budgetInstance?.linesByCategory.filter(c => c.categoryType === CategoryType.INCOME) || [];
+  }
+
+  getBudgetExpenseCategories(): BudgetCategoryInstance[] {
+    return this.budgetInstance?.linesByCategory.filter(c => c.categoryType === CategoryType.EXPENSE) || [];
+  }
+
+  // Filtrer les catégories disponibles selon le type
+  getFilteredCategories(): Category[] {
+    if (!this.availableCategoryType) return this.categories;
+    return this.categories.filter(c => c.type === this.availableCategoryType);
+  }
+
+  async createBudgetWithLines(): Promise<void> {
+    if (!this.selectedFamilyId) {
+      alert('Aucune famille sélectionnée');
+      return;
+    }
+
+    if (this.wizardLines.length === 0) {
+      alert('Veuillez ajouter au moins une ligne budgétaire');
+      return;
+    }
+
+    this.isCreatingBudget = true;
+
+    try {
+      // Mapper les lignes avec leur categoryId
+      const budgetName = `Budget ${this.monthName} ${this.currentYear}`;
+      const lines = this.wizardLines.map((item, index) => ({
+        categoryId: item.categoryId,
+        label: item.line.label,
+        description: item.line.description,
+        plannedAmount: item.line.plannedAmount,
+        plannedDate: item.line.plannedDate,
+        displayOrder: index
+      }));
+
+      // Créer le budget avec toutes les lignes en UNE SEULE requête
+      const budget = await this.budgetInstanceService.createBudget(
+        this.selectedFamilyId,
+        {
+          name: budgetName,
+          month: this.currentMonth,
+          year: this.currentYear,
+          lines: lines
+        }
+      ).toPromise();
+
+      if (!budget) {
+        throw new Error('Échec de création du budget');
+      }
+
+      // Recharger le budget complet
+      this.loadBudget();
+      this.closeBudgetWizard();
+      this.isCreatingBudget = false;
+    } catch (err: any) {
+      console.error('Erreur création budget', err);
+      alert('Erreur lors de la création du budget: ' + (err.error?.message || err.message));
+      this.isCreatingBudget = false;
+    }
+  }
+
+  // ========================================
+  // Gestion des lignes budgétaires
+  // ========================================
+
+  openAddIncomeForm(): void {
+    this.availableCategoryType = CategoryType.INCOME;
+    this.editingCategoryId = null;
+    this.editingLineId = null;
+    this.currentLine = this.getEmptyLine();
+    this.showLineForm = true;
+  }
+
+  openAddExpenseForm(): void {
+    this.availableCategoryType = CategoryType.EXPENSE;
+    this.editingCategoryId = null;
+    this.editingLineId = null;
+    this.currentLine = this.getEmptyLine();
+    this.showLineForm = true;
+  }
+
+  openEditLineForm(categoryId: number, line: BudgetLine): void {
+    this.availableCategoryType = null; // Pas de changement de catégorie en édition
+    this.editingCategoryId = categoryId;
+    this.editingLineId = line.id;
+    this.currentLine = {
+      label: line.label,
+      description: line.description,
+      plannedAmount: line.plannedAmount,
+      plannedDate: line.plannedDate,
+      displayOrder: line.displayOrder
+    };
+    this.showLineForm = true;
+  }
+
+  saveLine(): void {
+    if (!this.selectedFamilyId || !this.budgetInstance || !this.editingCategoryId) {
+      console.error('Données manquantes pour sauvegarder la ligne');
+      return;
+    }
+
+    if (this.editingLineId) {
+      // Modification
+      this.budgetLineService.updateBudgetLine(
+        this.selectedFamilyId,
+        this.budgetInstance.id,
+        this.editingLineId,
+        this.currentLine
+      ).subscribe({
+        next: () => {
+          this.loadBudget();
+          this.closeLineForm();
+        },
+        error: (err: any) => console.error('Erreur mise à jour ligne', err)
+      });
+    } else {
+      // Création - le categoryId est envoyé directement dans le body par le service
+      this.budgetLineService.createBudgetLine(
+        this.selectedFamilyId,
+        this.budgetInstance.id,
+        this.editingCategoryId,
+        this.currentLine
+      ).subscribe({
+        next: () => {
+          this.loadBudget();
+          this.closeLineForm();
+        },
+        error: (err: any) => console.error('Erreur création ligne', err)
+      });
+    }
+  }
+
+  deleteLine(categoryId: number, lineId: number): void {
+    if (!confirm('Supprimer cette ligne budgétaire ?')) return;
+
+    if (!this.selectedFamilyId || !this.budgetInstance) return;
+
+    this.budgetLineService.deleteBudgetLine(
+      this.selectedFamilyId,
+      this.budgetInstance.id,
+      lineId
+    ).subscribe({
+      next: () => this.loadBudget(),
+      error: (err: any) => console.error('Erreur suppression ligne', err)
+    });
+  }
+
+  closeLineForm(): void {
+    this.showLineForm = false;
+    this.editingCategoryId = null;
+    this.editingLineId = null;
+    this.availableCategoryType = null;
+    this.currentLine = this.getEmptyLine();
+  }
+
+  // ========================================
+  // Navigation
+  // ========================================
 
   previousMonth(): void {
     if (this.currentMonth === 1) {
@@ -175,7 +410,7 @@ export class BudgetComponent implements OnInit {
       this.currentMonth--;
     }
     this.monthName = this.getMonthName(this.currentMonth);
-    this.loadBudgets();
+    this.loadBudget();
   }
 
   nextMonth(): void {
@@ -186,8 +421,12 @@ export class BudgetComponent implements OnInit {
       this.currentMonth++;
     }
     this.monthName = this.getMonthName(this.currentMonth);
-    this.loadBudgets();
+    this.loadBudget();
   }
+
+  // ========================================
+  // Helpers
+  // ========================================
 
   getMonthName(month: number): string {
     const months = [
@@ -197,43 +436,91 @@ export class BudgetComponent implements OnInit {
     return months[month - 1];
   }
 
-  private getEmptyBudget(): Budget {
+  private getEmptyLine(): BudgetLineRequest {
     return {
-      categoryId: 0,
-      month: this.currentMonth,
-      year: this.currentYear,
+      label: '',
+      description: '',
       plannedAmount: 0,
-      amount: 0,
-      period: 'MONTHLY' as any,
-      startDate: new Date().toISOString().split('T')[0],
-      spent: 0,
-      remaining: 0,
-      percentage: 0,
-      active: true
+      plannedDate: undefined,
+      displayOrder: 0
     };
   }
 
-  getTotalPlanned(): number {
-    return this.budgets.reduce((sum, b) => sum + (b.plannedAmount || b.amount ||0), 0);
+  private getEmptyWizardLine(): BudgetLineRequest & { categoryId: number } {
+    return {
+      categoryId: 0,
+      label: '',
+      description: '',
+      plannedAmount: 0,
+      plannedDate: undefined,
+      displayOrder: 0
+    };
   }
 
-  getTotalActual(): number {
-    return this.budgets.reduce((sum, b) => sum + (b.actualAmount || b.spent || 0), 0);
+  getCategoryById(categoryId: number): Category | undefined {
+    return this.categories.find(c => c.id === categoryId);
   }
 
-  getTotalRemaining(): number {
-    return this.budgets.reduce((sum, b) => sum + (b.remainingAmount || b.remaining || 0), 0);
+  // Cartes résumé - Prévus
+  getTotalPlannedIncome(): number {
+    return this.budgetInstance?.totalIncomePlanned || 0;
   }
 
-  getProgressBarClass(budget: Budget): string {
-    const percentage = budget.completionPercentage || budget.percentage || 0;
+  getTotalPlannedExpenses(): number {
+    return this.budgetInstance?.totalExpensePlanned || 0;
+  }
+
+  getTotalPlannedBalance(): number {
+    return this.budgetInstance?.totalPlanned || 0;
+  }
+
+  // Cartes résumé - Réels
+  getTotalActualIncome(): number {
+    return this.budgetInstance?.totalIncomeActual || 0;
+  }
+
+  getTotalActualExpenses(): number {
+    return this.budgetInstance?.totalExpenseActual || 0;
+  }
+
+  getTotalActualBalance(): number {
+    return this.budgetInstance?.totalActual || 0;
+  }
+
+  // Pourcentages de réalisation
+  getIncomeRealizationPercentage(): number {
+    const planned = this.getTotalPlannedIncome();
+    if (planned === 0) return 0;
+    return (this.getTotalActualIncome() / planned) * 100;
+  }
+
+  getExpenseRealizationPercentage(): number {
+    const planned = this.getTotalPlannedExpenses();
+    if (planned === 0) return 0;
+    return (this.getTotalActualExpenses() / planned) * 100;
+  }
+
+  getProgressBarClass(category: BudgetCategoryInstance): string {
+    const percentage = category.percentageUsed || 0;
     if (percentage > 100) return 'over-budget';
     if (percentage > 80) return 'warning';
     return 'normal';
   }
 
-  getProgressBarWidth(budget: Budget): string {
-    const percentage = budget.completionPercentage || budget.percentage || 0;
+  getProgressBarWidth(category: BudgetCategoryInstance): string {
+    const percentage = category.percentageUsed || 0;
+    return Math.min(percentage, 100) + '%';
+  }
+
+  getLineProgressClass(line: BudgetLine): string {
+    const percentage = line.percentageUsed || 0;
+    if (percentage > 100) return 'over-budget';
+    if (percentage > 80) return 'warning';
+    return 'normal';
+  }
+
+  getLineProgressWidth(line: BudgetLine): string {
+    const percentage = line.percentageUsed || 0;
     return Math.min(percentage, 100) + '%';
   }
 }

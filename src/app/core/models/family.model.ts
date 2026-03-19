@@ -19,6 +19,7 @@ export interface Family {
   membersCount: number;
   myRole: FamilyRole;
   createdAt: string;
+  currency?: string;
 }
 
 /**

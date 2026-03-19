@@ -1,3 +1,43 @@
+/**
+ * TopCategoryStatistics - Statistiques détaillées par catégorie
+ */
+export interface TopCategoryStatistics {
+  categoryName: string;
+  categoryIcon: string;
+  amount: number;
+  percentage: number;
+  transactionCount: number;
+}
+
+/**
+ * MonthlyStatistics - Statistiques mensuelles d'une famille
+ * Correspond à la réponse API de GET /families/{id}/statistics
+ */
+export interface MonthlyStatistics {
+  familyId: number;
+  familyName: string | null;
+  month: number;
+  year: number;
+  totalIncome: number;
+  totalExpense: number;
+  balance: number;
+  totalBudgetPlanned: number;
+  totalBudgetActual: number;
+  totalBudgetRemaining: number;
+  budgetCompletionPercentage: number;
+  expensesByCategory: { [key: string]: number };
+  incomesByCategory: { [key: string]: number };
+  expensesByMember: { [key: string]: number };
+  incomesByMember: { [key: string]: number };
+  topExpenseCategories: TopCategoryStatistics[];
+  topIncomeCategories: TopCategoryStatistics[];
+  monthlyEvolution: any | null; // À typer plus précisément si besoin
+}
+
+/**
+ * CategoryStatistics - DEPRECATED: Utiliser TopCategoryStatistics à la place
+ * @deprecated
+ */
 export interface CategoryStatistics {
   categoryId: number;
   categoryName: string;
@@ -5,16 +45,6 @@ export interface CategoryStatistics {
   categoryIcon: string;
   amount: number;
   percentage: number;
-}
-
-export interface MonthlyStatistics {
-  month: number;
-  year: number;
-  totalIncome: number;
-  totalExpense: number;
-  balance: number;
-  incomeByCategory: CategoryStatistics[];
-  expenseByCategory: CategoryStatistics[];
 }
 
 /**

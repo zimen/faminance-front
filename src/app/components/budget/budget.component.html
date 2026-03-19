@@ -1,6 +1,7 @@
 <div class="budget-container">
+  <!-- Header -->
   <div class="header">
-    <h1>Budgets</h1>
+    <h1>💰 Budgets</h1>
     <div class="month-selector">
       <button (click)="previousMonth()" class="btn-nav">←</button>
       <h2>{{ monthName }} {{ currentYear }}</h2>
@@ -8,93 +9,440 @@
     </div>
   </div>
 
-  <div class="summary">
-    <div class="summary-item planned">
-      <span>Budget Planifié:</span>
-      <strong>{{ getTotalPlanned() | number:'1.2-2' }} €</strong>
-    </div>
-    <div class="summary-item actual">
-      <span>Dépensé:</span>
-      <strong>{{ getTotalActual() | number:'1.2-2' }} €</strong>
-    </div>
-    <div class="summary-item remaining" [class.negative]="getTotalRemaining() < 0">
-      <span>Restant:</span>
-      <strong>{{ getTotalRemaining() | number:'1.2-2' }} €</strong>
-    </div>
-  </div>
-
-  <div class="actions">
-    <button (click)="openAddForm()" class="btn-primary">+ Nouveau Budget</button>
-    <button (click)="recalculateBudgets()" class="btn-secondary">🔄 Recalculer</button>
-  </div>
-
-  <!-- Formulaire -->
-  <div *ngIf="showForm" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>{{ editMode ? 'Modifier' : 'Nouveau' }} Budget</h2>
-        <button (click)="closeForm()" class="btn-close">✕</button>
+  <!-- Summary Cards -->
+  <div class="summary-section" *ngIf="budgetInstance">
+    <!-- Ligne 1 - Budget Prévu -->
+    <div class="summary-row">
+      <h3 class="row-title">💼 Budget Prévu</h3>
+      <div class="summary-cards">
+        <div class="summary-card income">
+          <div class="card-icon">💰</div>
+          <div class="card-content">
+            <span class="card-label">Revenus</span>
+            <strong class="card-value positive">+{{ getTotalPlannedIncome() | number:'1.2-2' }} €</strong>
+          </div>
+        </div>
+        <div class="summary-card expense">
+          <div class="card-icon">💸</div>
+          <div class="card-content">
+            <span class="card-label">Dépenses</span>
+            <strong class="card-value negative">-{{ getTotalPlannedExpenses() | number:'1.2-2' }} €</strong>
+          </div>
+        </div>
+        <div class="summary-card balance" [class.negative]="getTotalPlannedBalance() < 0">
+          <div class="card-icon">📊</div>
+          <div class="card-content">
+            <span class="card-label">Solde</span>
+            <strong class="card-value" [class.positive]="getTotalPlannedBalance() >= 0" [class.negative]="getTotalPlannedBalance() < 0">
+              {{ getTotalPlannedBalance() >= 0 ? '+' : '' }}{{ getTotalPlannedBalance() | number:'1.2-2' }} €
+              {{ getTotalPlannedBalance() >= 0 ? '✅' : '⚠️' }}
+            </strong>
+          </div>
+        </div>
       </div>
-      <form (ngSubmit)="saveBudget()">
-        <div class="form-group">
-          <label>Catégorie</label>
-          <select [(ngModel)]="currentBudget.categoryId" name="categoryId" required>
-            <option [value]="0">-- Sélectionner --</option>
-            <option *ngFor="let cat of categories" [value]="cat.id">
-              {{ cat.icon }} {{ cat.name }}
-            </option>
-          </select>
+    </div>
+
+    <!-- Ligne 2 - Budget Réel -->
+    <div class="summary-row">
+      <h3 class="row-title">📈 Budget Réel</h3>
+      <div class="summary-cards">
+        <div class="summary-card income-actual">
+          <div class="card-icon">💵</div>
+          <div class="card-content">
+            <span class="card-label">Revenus</span>
+            <strong class="card-value positive">+{{ getTotalActualIncome() | number:'1.2-2' }} €</strong>
+            <span class="card-percentage" *ngIf="getTotalPlannedIncome() > 0">
+              {{ getIncomeRealizationPercentage() | number:'1.0-0' }}% réalisé
+            </span>
+          </div>
+        </div>
+        <div class="summary-card expense-actual">
+          <div class="card-icon">💳</div>
+          <div class="card-content">
+            <span class="card-label">Dépenses</span>
+            <strong class="card-value negative">-{{ getTotalActualExpenses() | number:'1.2-2' }} €</strong>
+            <span class="card-percentage" *ngIf="getTotalPlannedExpenses() > 0" 
+                  [class.warning]="getExpenseRealizationPercentage() > 100">
+              {{ getExpenseRealizationPercentage() | number:'1.0-0' }}% dépensé
+            </span>
+          </div>
+        </div>
+        <div class="summary-card balance-actual" [class.negative]="getTotalActualBalance() < 0">
+          <div class="card-icon">⚖️</div>
+          <div class="card-content">
+            <span class="card-label">Solde</span>
+            <strong class="card-value" [class.positive]="getTotalActualBalance() >= 0" [class.negative]="getTotalActualBalance() < 0">
+              {{ getTotalActualBalance() >= 0 ? '+' : '' }}{{ getTotalActualBalance() | number:'1.2-2' }} €
+              {{ getTotalActualBalance() >= 0 ? '✅' : '⚠️' }}
+            </strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Button -->
+  <div class="actions" *ngIf="!budgetInstance">
+    <button (click)="openBudgetWizard()" class="btn-create-budget">
+      <span class="btn-icon">✨</span>
+      Créer un Budget
+    </button>
+  </div>
+
+  <!-- Wizard Modal -->
+  <div *ngIf="showBudgetWizard" class="wizard-overlay" (click)="closeBudgetWizard()">
+    <div class="wizard-modal" (click)="$event.stopPropagation()">
+      <div class="wizard-header">
+        <h2>✨ Nouveau Budget - {{ monthName }} {{ currentYear }}</h2>
+        <button (click)="closeBudgetWizard()" class="btn-close">✕</button>
+      </div>
+
+      <div class="wizard-content">
+        <!-- Formulaire à gauche -->
+        <div class="wizard-form">
+          <h3>📝 Ajouter une ligne budgétaire</h3>
+          
+          <form (ngSubmit)="addWizardLine()">
+            <div class="form-group">
+              <label>Catégorie *</label>
+              <select [(ngModel)]="wizardCurrentLine.categoryId" name="categoryId" required class="select-modern">
+                <option [value]="0">-- Sélectionner --</option>
+                <option *ngFor="let cat of categories" [value]="cat.id">
+                  {{ cat.icon }} {{ cat.name }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Libellé *</label>
+              <input type="text" 
+                     [(ngModel)]="wizardCurrentLine.label" 
+                     name="label" 
+                     placeholder="Ex: Courses semaine"
+                     class="input-modern"
+                     required>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Montant (€) *</label>
+                <input type="number" 
+                       [(ngModel)]="wizardCurrentLine.plannedAmount" 
+                       name="plannedAmount"
+                       placeholder="0.00"
+                       step="0.01" 
+                       min="0"
+                       class="input-modern"
+                       required>
+              </div>
+
+              <div class="form-group">
+                <label>Date prévue</label>
+                <input type="date" 
+                       [(ngModel)]="wizardCurrentLine.plannedDate" 
+                       name="plannedDate"
+                       class="input-modern">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Description</label>
+              <textarea [(ngModel)]="wizardCurrentLine.description" 
+                        name="description"
+                        placeholder="Description optionnelle..."
+                        rows="2"
+                        class="textarea-modern"></textarea>
+            </div>
+
+            <button type="submit" 
+                    class="btn-add-line"
+                    [disabled]="!wizardCurrentLine.categoryId || !wizardCurrentLine.label || !wizardCurrentLine.plannedAmount">
+              {{ wizardEditingIndex !== null ? '✓ Modifier' : '+ Ajouter' }}
+            </button>
+          </form>
         </div>
 
-        <div class="form-group">
-          <label>Montant Planifié (€)</label>
-          <input type="number" [(ngModel)]="currentBudget.plannedAmount" name="plannedAmount" 
-                 step="0.01" min="0" required>
+        <!-- Preview à droite -->
+        <div class="wizard-preview">
+          <div class="preview-header">
+            <h3>👁️ Aperçu</h3>
+            <span class="preview-count" *ngIf="wizardLines.length > 0">{{ wizardLines.length }} ligne(s)</span>
+          </div>
+
+          <div *ngIf="wizardLines.length === 0" class="preview-empty">
+            <p>👈 Commencez par ajouter des lignes budgétaires</p>
+          </div>
+
+          <div *ngIf="wizardLines.length > 0" class="preview-content">
+            
+            <!-- REVENUS -->
+            <div *ngIf="getWizardIncomeCategories().length > 0" class="preview-section income-section">
+              <div class="section-header">
+                <h4>💰 REVENUS</h4>
+                <span class="section-total">+{{ getWizardTotalIncome() | number:'1.2-2' }} €</span>
+              </div>
+              
+              <div *ngFor="let group of getWizardIncomeCategories()" class="preview-category">
+                <div class="preview-category-header">
+                  <span class="category-icon" [style.color]="group.category.color">
+                    {{ group.category.icon }}
+                  </span>
+                  <span class="category-name">{{ group.category.name }} ({{ group.lines.length }})</span>
+                </div>
+
+                <div class="preview-lines-list">
+                  <div *ngFor="let item of group.lines" class="preview-line">
+                    <div class="line-info">
+                      <span class="line-label">{{ item.line.label }}</span>
+                      <span class="line-amount positive">+{{ item.line.plannedAmount | number:'1.2-2' }} €</span>
+                    </div>
+                    <div class="line-actions">
+                      <button (click)="editWizardLine(item.index)" class="btn-icon-small" title="Modifier">✎</button>
+                      <button (click)="deleteWizardLine(item.index)" class="btn-icon-small danger" title="Supprimer">🗑</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- DÉPENSES -->
+            <div *ngIf="getWizardExpenseCategories().length > 0" class="preview-section expense-section">
+              <div class="section-header">
+                <h4>💸 DÉPENSES</h4>
+                <span class="section-total negative">-{{ getWizardTotalExpenses() | number:'1.2-2' }} €</span>
+              </div>
+              
+              <div *ngFor="let group of getWizardExpenseCategories()" class="preview-category">
+                <div class="preview-category-header">
+                  <span class="category-icon" [style.color]="group.category.color">
+                    {{ group.category.icon }}
+                  </span>
+                  <span class="category-name">{{ group.category.name }} ({{ group.lines.length }})</span>
+                </div>
+
+                <div class="preview-lines-list">
+                  <div *ngFor="let item of group.lines" class="preview-line">
+                    <div class="line-info">
+                      <span class="line-label">{{ item.line.label }}</span>
+                      <span class="line-amount negative">-{{ item.line.plannedAmount | number:'1.2-2' }} €</span>
+                    </div>
+                    <div class="line-actions">
+                      <button (click)="editWizardLine(item.index)" class="btn-icon-small" title="Modifier">✎</button>
+                      <button (click)="deleteWizardLine(item.index)" class="btn-icon-small danger" title="Supprimer">🗑</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SOLDE FINAL -->
+            <div class="preview-balance">
+              <div class="balance-line">
+                <span class="balance-label">📊 SOLDE PRÉVU</span>
+                <strong class="balance-amount" [ngClass]="getWizardBalance() >= 0 ? 'positive' : 'negative'">
+                  {{ getWizardBalance() >= 0 ? '+' : '' }}{{ getWizardBalance() | number:'1.2-2' }} €
+                  <span class="balance-icon">{{ getWizardBalance() >= 0 ? '✅' : '⚠️' }}</span>
+                </strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wizard-footer">
+        <button (click)="closeBudgetWizard()" class="btn-secondary">Annuler</button>
+        <button (click)="createBudgetWithLines()" 
+                class="btn-primary"
+                [disabled]="wizardLines.length === 0 || isCreatingBudget">
+          <span *ngIf="!isCreatingBudget">✓ Créer le budget</span>
+          <span *ngIf="isCreatingBudget">⏳ Création...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Budget List -->
+  <div class="budget-list" *ngIf="budgetInstance">
+    
+    <!-- REVENUS -->
+    <div class="budget-section income-section">
+      <div class="section-header-main">
+        <h2>💰 REVENUS</h2>
+        <button (click)="openAddIncomeForm()" class="btn-add-section">
+          ➕ Ajouter un Revenu
+        </button>
+        <span class="section-total-main positive">+{{ budgetInstance.totalIncomePlanned | number:'1.2-2' }} €</span>
+      </div>
+
+      <div *ngFor="let category of getBudgetIncomeCategories()" class="category-card">
+        <div class="category-card-header">
+          <div class="category-info">
+            <span class="category-icon-large" [style.color]="category.categoryColor">
+              {{ category.categoryIcon }}
+            </span>
+            <div class="category-title">
+              <h3>{{ category.categoryName }}</h3>
+              <span class="category-subtitle">{{ category.lines.length }} ligne(s)</span>
+            </div>
+          </div>
+          <div class="category-amounts">
+            <span class="amount-actual positive">+{{ category.totalActual | number:'1.2-2' }} €</span>
+            <span class="amount-separator">/</span>
+            <span class="amount-planned">+{{ category.totalPlanned | number:'1.2-2' }} €</span>
+          </div>
         </div>
 
-        <div class="form-actions">
-          <button type="submit" class="btn-primary">Enregistrer</button>
-          <button type="button" (click)="closeForm()" class="btn-secondary">Annuler</button>
+        <div class="category-progress-container">
+          <div class="progress-bar-modern" [ngClass]="getProgressBarClass(category)">
+            <div class="progress-fill-modern" [style.width]="getProgressBarWidth(category)"></div>
+          </div>
+          <span class="progress-label">{{ category.percentageUsed | number:'1.0-0' }}%</span>
+        </div>
+
+        <div class="category-lines">
+          <div *ngFor="let line of category.lines" class="budget-line-card">
+            <div class="line-content">
+              <div class="line-main">
+                <strong class="line-label">{{ line.label }}</strong>
+                <span class="line-description" *ngIf="line.description">{{ line.description }}</span>
+              </div>
+              <div class="line-amounts">
+                <span class="line-actual positive">+{{ line.actualAmount | number:'1.2-2' }} €</span>
+                <span class="amount-separator">/</span>
+                <span class="line-planned">+{{ line.plannedAmount | number:'1.2-2' }} €</span>
+              </div>
+            </div>
+            <div class="line-progress-container">
+              <div class="progress-bar-line" [ngClass]="getLineProgressClass(line)">
+                <div class="progress-fill-line" [style.width]="getLineProgressWidth(line)"></div>
+              </div>
+              <span class="line-percentage">{{ line.percentageUsed | number:'1.0-0' }}%</span>
+            </div>
+            <div class="line-actions">
+              <button (click)="openEditLineForm(category.categoryId, line)" class="btn-edit-small">✎</button>
+              <button (click)="deleteLine(category.categoryId, line.id)" class="btn-delete-small">🗑</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DÉPENSES -->
+    <div class="budget-section expense-section">
+      <div class="section-header-main">
+        <h2>💸 DÉPENSES</h2>
+        <button (click)="openAddExpenseForm()" class="btn-add-section">
+          ➕ Ajouter une Dépense
+        </button>
+        <span class="section-total-main negative">-{{ budgetInstance.totalExpensePlanned | number:'1.2-2' }} €</span>
+      </div>
+
+      <div *ngFor="let category of getBudgetExpenseCategories()" class="category-card">
+        <div class="category-card-header">
+          <div class="category-info">
+            <span class="category-icon-large" [style.color]="category.categoryColor">
+              {{ category.categoryIcon }}
+            </span>
+            <div class="category-title">
+              <h3>{{ category.categoryName }}</h3>
+              <span class="category-subtitle">{{ category.lines.length }} ligne(s)</span>
+            </div>
+          </div>
+          <div class="category-amounts">
+            <span class="amount-actual negative">-{{ category.totalActual | number:'1.2-2' }} €</span>
+            <span class="amount-separator">/</span>
+            <span class="amount-planned">-{{ category.totalPlanned | number:'1.2-2' }} €</span>
+          </div>
+        </div>
+
+        <div class="category-progress-container">
+          <div class="progress-bar-modern" [ngClass]="getProgressBarClass(category)">
+            <div class="progress-fill-modern" [style.width]="getProgressBarWidth(category)"></div>
+          </div>
+          <span class="progress-label">{{ category.percentageUsed | number:'1.0-0' }}%</span>
+        </div>
+
+        <div class="category-lines">
+          <div *ngFor="let line of category.lines" class="budget-line-card">
+            <div class="line-content">
+              <div class="line-main">
+                <strong class="line-label">{{ line.label }}</strong>
+                <span class="line-description" *ngIf="line.description">{{ line.description }}</span>
+              </div>
+              <div class="line-amounts">
+                <span class="line-actual negative">-{{ line.actualAmount | number:'1.2-2' }} €</span>
+                <span class="amount-separator">/</span>
+                <span class="line-planned">-{{ line.plannedAmount | number:'1.2-2' }} €</span>
+              </div>
+            </div>
+            <div class="line-progress-container">
+              <div class="progress-bar-line" [ngClass]="getLineProgressClass(line)">
+                <div class="progress-fill-line" [style.width]="getLineProgressWidth(line)"></div>
+              </div>
+              <span class="line-percentage">{{ line.percentageUsed | number:'1.0-0' }}%</span>
+            </div>
+            <div class="line-actions">
+              <button (click)="openEditLineForm(category.categoryId, line)" class="btn-edit-small">✎</button>
+              <button (click)="deleteLine(category.categoryId, line.id)" class="btn-delete-small">🗑</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+
+  <!-- Modal édition ligne existante -->
+  <div *ngIf="showLineForm" class="modal-overlay" (click)="closeLineForm()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingLineId ? 'Modifier' : 'Nouvelle' }} Ligne Budgétaire</h2>
+        <button (click)="closeLineForm()" class="btn-close">✕</button>
+      </div>
+      <form (ngSubmit)="saveLine()">
+        <div class="modal-body">
+          <!-- Sélecteur de catégorie (uniquement en création) -->
+          <div class="form-group" *ngIf="!editingLineId">
+            <label>Catégorie *</label>
+            <select [(ngModel)]="editingCategoryId" name="categoryId" required class="select-modern">
+              <option [value]="null">-- Sélectionner une catégorie --</option>
+              <option *ngFor="let cat of getFilteredCategories()" [value]="cat.id">
+                {{ cat.icon }} {{ cat.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Libellé *</label>
+            <input type="text" [(ngModel)]="currentLine.label" name="label" 
+                   placeholder="Ex: Courses alimentaires" class="input-modern" required>
+          </div>
+
+          <div class="form-group">
+            <label>Description</label>
+            <textarea [(ngModel)]="currentLine.description" name="description" 
+                      placeholder="Description optionnelle" class="textarea-modern" rows="2"></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Montant Planifié (€) *</label>
+              <input type="number" [(ngModel)]="currentLine.plannedAmount" name="plannedAmount" 
+                     step="0.01" min="0" class="input-modern" required>
+            </div>
+
+            <div class="form-group">
+              <label>Date Prévue</label>
+              <input type="date" [(ngModel)]="currentLine.plannedDate" name="plannedDate" class="input-modern">
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" (click)="closeLineForm()" class="btn-secondary">Annuler</button>
+          <button type="submit" class="btn-primary" [disabled]="!editingLineId && !editingCategoryId">Enregistrer</button>
         </div>
       </form>
-    </div>
-  </div>
-
-  <!-- Liste des budgets -->
-  <div class="budget-list">
-    <div *ngIf="budgets.length === 0" class="empty-state">
-      Aucun budget défini pour ce mois
-    </div>
-
-    <div *ngFor="let budget of budgets" class="budget-item">
-      <div class="budget-icon" [style.color]="budget.category?.color">
-        {{ budget.category?.icon }}
-      </div>
-      <div class="budget-details">
-        <div class="budget-header">
-          <div class="budget-category">{{ budget.category?.name }}</div>
-          <div class="budget-amounts">
-            <span class="actual-amount">{{ budget.actualAmount | number:'1.2-2' }} €</span>
-            <span class="separator">/</span>
-            <span class="planned-amount">{{ budget.plannedAmount | number:'1.2-2' }} €</span>
-          </div>
-        </div>
-        <div class="progress-bar-container">
-          <div class="progress-bar" [ngClass]="getProgressBarClass(budget)">
-            <div class="progress-fill" [style.width]="getProgressBarWidth(budget)"></div>
-          </div>
-          <div class="progress-text">{{ budget.completionPercentage | number:'1.0-0' }}%</div>
-        </div>
-        <div class="budget-footer">
-          <span class="remaining-amount" [class.negative]="(budget.remainingAmount || 0) < 0">
-            Restant: {{ budget.remainingAmount | number:'1.2-2' }} €
-          </span>
-        </div>
-      </div>
-      <div class="budget-actions">
-        <button (click)="editBudget(budget)" class="btn-edit">✎</button>
-        <button (click)="deleteBudget(budget.id!)" class="btn-delete">🗑</button>
-      </div>
     </div>
   </div>
 </div>

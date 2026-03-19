@@ -12,6 +12,19 @@ export interface Transaction {
   categoryName?: string;
   categoryIcon?: string;
   category?: Category; // Objet complet (optionnel)
+  
+  // Rattachement à une ligne budgétaire
+  budgetLineId?: number;
+  budgetLine?: {
+    id: number;
+    label: string;
+    budgetName: string;
+    budgetMonth: number;
+    budgetYear: number;
+    plannedAmount: number;
+    currentAmount: number;
+  };
+  
   familyMemberId?: number;
   memberName?: string;
   familyMember?: FamilyMember; // Objet complet (optionnel)
@@ -31,6 +44,7 @@ export interface Transaction {
  */
 export interface TransactionRequest {
   categoryId: number;
+  budgetLineId?: number; // Ligne budgétaire (optionnel)
   familyMemberId?: number; // Membre concerné
   description: string;
   amount: number;

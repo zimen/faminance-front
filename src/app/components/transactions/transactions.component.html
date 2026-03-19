@@ -86,6 +86,19 @@
           </select>
         </div>
 
+        <div class="form-group" *ngIf="currentBudget && currentTransaction.categoryId">
+          <label>🎯 Ligne budgétaire (optionnel)</label>
+          <select [(ngModel)]="currentTransaction.budgetLineId" name="budgetLineId">
+            <option [value]="undefined">-- Aucune ligne --</option>
+            <option *ngFor="let line of getFilteredBudgetLines()" [value]="line.id">
+              {{ getBudgetLineDisplay(line) }}
+            </option>
+          </select>
+          <small class="form-hint" *ngIf="getFilteredBudgetLines().length === 0 && currentTransaction.categoryId">
+            Aucune ligne budgétaire disponible pour cette catégorie
+          </small>
+        </div>
+
         <div class="form-group">
           <label>Description</label>
           <input type="text" [(ngModel)]="currentTransaction.description" name="description" required>
@@ -125,6 +138,9 @@
       <div class="transaction-details">
         <div class="transaction-description">{{ transaction.description }}</div>
         <div class="transaction-category">{{ transaction.categoryName || transaction.category?.name }}</div>
+        <div *ngIf="transaction.budgetLine" class="transaction-budget-line">
+          🎯 {{ transaction.budgetLine.label }}
+        </div>
         <div *ngIf="transaction.memberName || transaction.familyMember" class="transaction-member">
           👤 {{ transaction.memberName || transaction.familyMember?.nickname || transaction.familyMember?.fullName }}
         </div>

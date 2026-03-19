@@ -131,13 +131,14 @@ export class CategoryService {
    * Ajoute une catégorie système à la famille
    * Crée une copie de la catégorie système pour la famille
    */
-  addSystemCategoryToFamily(familyId: number, systemCategoryId: number): Observable<Category> {
+  addSystemCategoryToFamily(familyId: number, systemCategory: SystemCategory): Observable<Category> {
     const request: CategoryRequest = {
-      name: '', // Le backend utilisera le nom de la catégorie système
-      type: 'INCOME' as any, // Le backend utilisera le type de la catégorie système
-      icon: '',
-      color: '',
-      systemCategoryId
+      name: systemCategory.name,
+      type: systemCategory.defaultType,
+      icon: systemCategory.icon,
+      color: systemCategory.defaultColor,
+      description: systemCategory.description,
+      systemCategoryId: systemCategory.id
     };
     
     return this.http.post<Category>(

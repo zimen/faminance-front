@@ -220,5 +220,7 @@ export class StorageService {
     this.clearToken();
     this.clearSelectedFamilyId();
     this.clearUser();
+    this.clearOnboardingComplete();
+    this.clearOnboardingState();
   }
 }
