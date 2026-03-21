@@ -1,0 +1,105 @@
+<div class="join-by-code-container">
+  <div class="join-card">
+    <!-- En-tête -->
+    <div class="card-header">
+      <div class="icon-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+        </svg>
+      </div>
+      <h1>Rejoindre une famille</h1>
+      <p class="subtitle">Entrez le code d'invitation fourni par l'administrateur</p>
+    </div>
+
+    <!-- Message de succès -->
+    <div *ngIf="success" class="success-state">
+      <div class="success-icon">✓</div>
+      <h2>Bienvenue dans la famille !</h2>
+      <p>Vous avez rejoint <strong>{{ joinedFamilyName }}</strong></p>
+      <p class="redirect-info">Redirection vers le tableau de bord...</p>
+    </div>
+
+    <!-- Formulaire -->
+    <form *ngIf="!success" [formGroup]="codeForm" (ngSubmit)="onSubmit()" class="code-form">
+      <div class="form-content">
+        <!-- Message d'erreur global -->
+        <div *ngIf="error" class="alert alert-error">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{{ error }}</span>
+        </div>
+
+        <!-- Champ de saisie du code -->
+        <div class="form-group">
+          <label for="code" class="form-label">
+            Code d'invitation
+            <span class="required">*</span>
+          </label>
+          <input
+            type="text"
+            id="code"
+            formControlName="code"
+            (input)="onCodeInput($event)"
+            placeholder="XXXX-XXXX"
+            maxlength="9"
+            class="form-input code-input"
+            [class.input-error]="codeControl?.invalid && codeControl?.touched"
+            [class.input-success]="isCodeValid"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          
+          <!-- Indicateur de validation -->
+          <div class="input-feedback">
+            <div *ngIf="codeControl?.invalid && codeControl?.touched" class="error-message">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+              </svg>
+              <span>Le code doit être au format XXXX-XXXX</span>
+            </div>
+            <div *ngIf="isCodeValid" class="success-message">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+              </svg>
+              <span>Format valide</span>
+            </div>
+          </div>
+
+          <!-- Aide -->
+          <p class="form-help">
+            Le code se compose de 8 caractères alphanumériques séparés par un tiret (ex: AB12-XY34)
+          </p>
+        </div>
+
+        <!-- Boutons d'action -->
+        <div class="form-actions">
+          <button 
+            type="submit" 
+            class="btn btn-primary btn-large"
+            [disabled]="codeForm.invalid || isSubmitting">
+            <span *ngIf="!isSubmitting">Rejoindre la famille</span>
+            <span *ngIf="isSubmitting" class="loading-text">
+              <span class="spinner-small"></span>
+              Vérification en cours...
+            </span>
+          </button>
+          
+          <a routerLink="/dashboard" class="btn btn-text">Annuler</a>
+        </div>
+      </div>
+
+      <!-- Informations complémentaires -->
+      <div class="info-box">
+        <div class="info-icon">💡</div>
+        <div class="info-content">
+          <h3>Où trouver le code ?</h3>
+          <p>
+            Le code d'invitation est fourni par l'administrateur de la famille. 
+            Il peut vous être communiqué par email, message ou en personne.
+          </p>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

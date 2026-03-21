@@ -11,6 +11,7 @@ import { FamilyService } from '../../core/services/family.service';
 import { FamilyMember } from '../../core/models/family.model';
 import { BudgetLine } from '../../core/models/budget-line.model';
 import { BudgetInstance } from '../../core/models/budget-template.model';
+import { DialogService } from '../../shared/services/dialog.service';
 
 @Component({
   selector: 'app-transactions',
@@ -51,7 +52,8 @@ export class TransactionsComponent implements OnInit {
     private categoryService: CategoryService,
     private budgetLineService: BudgetLineService,
     private budgetInstanceService: BudgetInstanceService,
-    private familyService: FamilyService
+    private familyService: FamilyService,
+    private dialogService: DialogService
   ) {
     const now = new Date();
     this.currentMonth = now.getMonth() + 1;
@@ -235,18 +237,19 @@ export class TransactionsComponent implements OnInit {
     }
   }
 
-  deleteTransaction(id: number): void {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette transaction ?')) {
-      if (!this.selectedFamilyId) {
-        console.error('Aucune famille sélectionnée');
-        return;
-      }
+  async deleteTransaction(id: number): Promise<void> {
+    const confirmed = await this.dialogService.confirm('Êtes-vous sûr de vouloir supprimer cette transaction ?');
+    if (!confirmed) return;
 
-      this.transactionService.deleteTransaction(this.selectedFamilyId, id).subscribe({
-        next: () => this.loadTransactions(),
-        error: (err) => console.error('Erreur lors de la suppression', err)
-      });
+    if (!this.selectedFamilyId) {
+      console.error('Aucune famille sélectionnée');
+      return;
     }
+
+    this.transactionService.deleteTransaction(this.selectedFamilyId, id).subscribe({
+      next: () => this.loadTransactions(),
+      error: (err) => console.error('Erreur lors de la suppression', err)
+    });
   }
 
   closeForm(): void {

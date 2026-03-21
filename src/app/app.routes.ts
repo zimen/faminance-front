@@ -35,6 +35,8 @@ import { FamilySettingsComponent } from './pages/family/tabs/family-settings.com
 // Invitation Components
 import { InvitationListComponent } from './features/invitations/invitation-list/invitation-list.component';
 import { InvitationSendComponent } from './features/invitations/invitation-send/invitation-send.component';
+import { AcceptInvitationComponent } from './components/invitations/accept-invitation/accept-invitation.component';
+import { JoinByCodeComponent } from './components/invitations/join-by-code/join-by-code.component';
 
 // Existing Components (will be adapted)
 import { DashboardComponent } from './components/dashboard/dashboard.component';
@@ -88,6 +90,10 @@ export const routes: Routes = [
     ]
   },
 
+  // Public invitation routes
+  // Accept invitation via email link (public access - user can view invitation details)
+  { path: 'accept-invitation', component: AcceptInvitationComponent },
+
   // Protected routes (require authentication + onboarding completion)
   // Wrapped in AppLayoutComponent to show sidebar navigation
   {
@@ -97,6 +103,12 @@ export const routes: Routes = [
     children: [
       // Dashboard
       { path: 'dashboard', component: DashboardComponent },
+
+      // Join family by code (requires authentication)
+      { 
+        path: 'join', 
+        component: JoinByCodeComponent
+      },
 
       // Transactions
       { path: 'transactions', component: TransactionsComponent },

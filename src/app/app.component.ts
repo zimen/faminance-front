@@ -3,12 +3,13 @@ import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/rou
 import { CommonModule } from '@angular/common';
 import { AuthService } from './core/services/auth.service';
 import { FamilySelectorComponent } from './shared/components/family-selector/family-selector.component';
+import { ToastComponent } from './shared/components/toast/toast.component';
 import { User } from './core/models';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, FamilySelectorComponent],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, FamilySelectorComponent, ToastComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })

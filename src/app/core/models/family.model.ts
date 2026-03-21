@@ -20,6 +20,7 @@ export interface Family {
   myRole: FamilyRole;
   createdAt: string;
   currency?: string;
+  joinCode?: string; // Code court pour rejoindre la famille (ex: AB12-XY34)
 }
 
 /**

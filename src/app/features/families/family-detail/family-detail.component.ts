@@ -6,6 +6,7 @@ import { InvitationService } from '../../../core/services/invitation.service';
 import { Family, FamilyMember, FamilyRole } from '../../../core/models';
 import { MemberAvatarComponent } from '../../../shared/components/member-avatar/member-avatar.component';
 import { RoleBadgeComponent } from '../../../shared/components/role-badge/role-badge.component';
+import { DialogService } from '../../../shared/services/dialog.service';
 
 /**
  * FamilyDetailComponent - Détails d'une famille avec gestion des membres
@@ -31,7 +32,8 @@ export class FamilyDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private familyService: FamilyService,
-    private invitationService: InvitationService
+    private invitationService: InvitationService,
+    private dialogService: DialogService
   ) {}
 
   ngOnInit(): void {
@@ -82,70 +84,94 @@ export class FamilyDetailComponent implements OnInit {
     return this.family?.myRole === FamilyRole.ADMIN;
   }
 
-  changeRole(member: FamilyMember): void {
+  async changeRole(member: FamilyMember): Promise<void> {
     // Cycle through roles: MEMBER -> PARENT -> ADMIN -> MEMBER
     const roles = [FamilyRole.MEMBER, FamilyRole.PARENT, FamilyRole.ADMIN];
     const currentIndex = roles.indexOf(member.role);
     const newRole = roles[(currentIndex + 1) % roles.length];
 
-    if (this.family && confirm(`Changer le rôle de ${member.fullName} en ${newRole} ?`)) {
-      this.familyService.updateMemberRole(this.family.id, member.id, newRole).subscribe({
-        next: () => {
-          this.successMessage = 'Rôle mis à jour avec succès';
-          this.loadMembers(this.family!.id);
-          setTimeout(() => this.successMessage = '', 3000);
-        },
-        error: error => {
-          this.errorMessage = error.message || 'Erreur lors de la mise à jour du rôle';
-        }
-      });
-    }
+    if (!this.family) return;
+    
+    const confirmed = await this.dialogService.confirm(`Changer le rôle de ${member.fullName} en ${newRole} ?`);
+    if (!confirmed) return;
+
+    this.familyService.updateMemberRole(this.family.id, member.id, newRole).subscribe({
+      next: () => {
+        this.dialogService.success('Rôle mis à jour avec succès');
+        this.loadMembers(this.family!.id);
+      },
+      error: error => {
+        this.errorMessage = error.message || 'Erreur lors de la mise à jour du rôle';
+      }
+    });
   }
 
-  removeMember(member: FamilyMember): void {
-    if (this.family && confirm(`Retirer ${member.fullName} de la famille ?`)) {
-      this.familyService.removeMember(this.family.id, member.id).subscribe({
-        next: () => {
-          this.successMessage = 'Membre retiré avec succès';
-          this.loadMembers(this.family!.id);
-          setTimeout(() => this.successMessage = '', 3000);
-        },
-        error: error => {
-          this.errorMessage = error.message || 'Erreur lors du retrait du membre';
-        }
-      });
-    }
+  async removeMember(member: FamilyMember): Promise<void> {
+    if (!this.family) return;
+    
+    const confirmed = await this.dialogService.confirm({
+      title: 'Retirer un membre',
+      message: `Retirer ${member.fullName} de la famille ?`,
+      type: 'warning'
+    });
+    if (!confirmed) return;
+
+    this.familyService.removeMember(this.family.id, member.id).subscribe({
+      next: () => {
+        this.dialogService.success('Membre retiré avec succès');
+        this.loadMembers(this.family!.id);
+      },
+      error: error => {
+        this.errorMessage = error.message || 'Erreur lors du retrait du membre';
+      }
+    });
   }
 
   editFamily(): void {
     // TODO: Implémenter l'édition de famille
-    alert('Fonctionnalité à venir');
+    this.dialogService.info('Fonctionnalité à venir');
   }
 
-  deleteFamily(): void {
-    if (this.family && confirm(`Êtes-vous sûr de vouloir supprimer la famille "${this.family.name}" ? Cette action est irréversible.`)) {
-      this.familyService.deleteFamily(this.family.id).subscribe({
-        next: () => {
-          this.router.navigate(['/families']);
-        },
-        error: error => {
-          this.errorMessage = error.message || 'Erreur lors de la suppression de la famille';
-        }
-      });
-    }
+  async deleteFamily(): Promise<void> {
+    if (!this.family) return;
+    
+    const confirmed = await this.dialogService.confirm({
+      title: 'Supprimer la famille',
+      message: `Êtes-vous sûr de vouloir supprimer la famille "${this.family.name}" ? Cette action est irréversible.`,
+      type: 'error',
+      confirmText: 'Supprimer',
+      cancelText: 'Annuler'
+    });
+    if (!confirmed) return;
+
+    this.familyService.deleteFamily(this.family.id).subscribe({
+      next: () => {
+        this.router.navigate(['/families']);
+      },
+      error: error => {
+        this.errorMessage = error.message || 'Erreur lors de la suppression de la famille';
+      }
+    });
   }
 
-  leaveFamily(): void {
-    if (this.family && confirm(`Êtes-vous sûr de vouloir quitter la famille "${this.family.name}" ?`)) {
-      this.familyService.leaveFamily(this.family.id).subscribe({
-        next: () => {
-          this.router.navigate(['/families']);
-        },
-        error: error => {
-          this.errorMessage = error.message || 'Erreur lors de la sortie de la famille';
-        }
-      });
-    }
+  async leaveFamily(): Promise<void> {
+    if (!this.family) return;
+    
+    const confirmed = await this.dialogService.confirm({
+      title: 'Quitter la famille',
+      message: `Êtes-vous sûr de vouloir quitter la famille "${this.family.name}" ?`,
+      type: 'warning'
+    });
+    if (!confirmed) return;
+
+    this.familyService.leaveFamily(this.family.id).subscribe({
+      next: () => {
+        this.router.navigate(['/families']);
+      },
+      error: error => {
+        this.errorMessage = error.message || 'Erreur lors de la sortie de la famille';
+      }
+    });
   }
 
   goBack(): void {

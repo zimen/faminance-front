@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { OnboardingService } from '../../../core/services/onboarding.service';
 import { FamilyService } from '../../../core/services/family.service';
+import { DialogService } from '../../../shared/services/dialog.service';
 
 interface CategorySelection {
   id: number;
@@ -29,7 +30,8 @@ export class Step3CategoriesComponent implements OnInit {
   constructor(
     private onboardingService: OnboardingService,
     private familyService: FamilyService,
-    private router: Router
+    private router: Router,
+    private dialogService: DialogService
   ) {}
 
   ngOnInit(): void {
@@ -122,11 +124,12 @@ export class Step3CategoriesComponent implements OnInit {
     });
   }
 
-  onSkip(): void {
-    if (confirm('Êtes-vous sûr de vouloir sauter cette étape ? Vous pourrez ajouter des catégories plus tard.')) {
-      this.onboardingService.skipStep();
-      this.router.navigate(['/onboarding/first-transaction']);
-    }
+  async onSkip(): Promise<void> {
+    const confirmed = await this.dialogService.confirm('Êtes-vous sûr de vouloir sauter cette étape ? Vous pourrez ajouter des catégories plus tard.');
+    if (!confirmed) return;
+
+    this.onboardingService.skipStep();
+    this.router.navigate(['/onboarding/first-transaction']);
   }
 
   onBack(): void {

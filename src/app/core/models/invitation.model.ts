@@ -37,3 +37,33 @@ export interface InvitationRequest {
   proposedRole: FamilyRole;
   message?: string;
 }
+
+/**
+ * InvitationPublicResponse - Réponse publique pour afficher une invitation (sans auth)
+ */
+export interface InvitationPublicResponse {
+  familyId: number;
+  familyName: string;
+  familyDescription?: string;
+  invitedBy: string;
+  proposedRole: FamilyRole;
+  message?: string;
+  expiresAt: string;
+  status: InvitationStatus;
+}
+
+/**
+ * JoinByCodeRequest - Données pour rejoindre une famille par code
+ */
+export interface JoinByCodeRequest {
+  code: string;
+}
+
+/**
+ * JoinByCodeResponse - Réponse après avoir rejoint par code
+ */
+export interface JoinByCodeResponse {
+  familyId: number;
+  familyName: string;
+  role: FamilyRole;
+}

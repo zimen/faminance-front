@@ -13,6 +13,7 @@ import {
 import { Category } from '../../core/models/category.model';
 import { RecurrencePattern } from '../../core/models/budget-forecast.model';
 import { BUDGET_LINE_LIMITS } from '../../core/models/budget-line.model';
+import { DialogService } from '../../shared/services/dialog.service';
 
 /**
  * Ligne budgétaire simplifiée avec catégorie
@@ -75,7 +76,8 @@ export class BudgetTemplateFormComponent implements OnInit {
     private router: Router,
     private budgetTemplateService: BudgetTemplateService,
     private categoryService: CategoryService,
-    private familyService: FamilyService
+    private familyService: FamilyService,
+    private dialogService: DialogService
   ) {}
 
   ngOnInit(): void {
@@ -276,14 +278,15 @@ export class BudgetTemplateFormComponent implements OnInit {
     this.errorMessage = '';
   }
 
-  removeLine(lineIndex: number): void {
-    if (confirm('Supprimer cette ligne budgétaire ?')) {
-      this.lines.splice(lineIndex, 1);
-      // Réorganiser displayOrder
-      this.lines.forEach((line, index) => {
-        line.displayOrder = index;
-      });
-    }
+  async removeLine(lineIndex: number): Promise<void> {
+    const confirmed = await this.dialogService.confirm('Supprimer cette ligne budgétaire ?');
+    if (!confirmed) return;
+
+    this.lines.splice(lineIndex, 1);
+    // Réorganiser displayOrder
+    this.lines.forEach((line, index) => {
+      line.displayOrder = index;
+    });
   }
 
   closeLineForm(): void {
@@ -346,9 +349,10 @@ export class BudgetTemplateFormComponent implements OnInit {
     return count < this.MAX_LINES_PER_CATEGORY;
   }
 
-  cancel(): void {
-    if (confirm('Annuler les modifications ?')) {
-      this.router.navigate(['/budget-templates']);
-    }
+  async cancel(): Promise<void> {
+    const confirmed = await this.dialogService.confirm('Annuler les modifications ?');
+    if (!confirmed) return;
+
+    this.router.navigate(['/budget-templates']);
   }
 }

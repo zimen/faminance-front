@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
-import { Invitation, InvitationRequest } from '../models';
+import { Invitation, InvitationRequest, InvitationPublicResponse } from '../models';
 import { environment } from '../../../environments/environment';
 
 /**
@@ -134,6 +134,20 @@ export class InvitationService {
       .pipe(
         catchError(error => {
           console.error('Erreur lors du renvoi de l\'invitation:', error);
+          return throwError(() => error);
+        })
+      );
+  }
+
+  /**
+   * Récupère les informations publiques d'une invitation par son token (sans authentification)
+   * Utilisé pour afficher la page d'acceptation avant login/register
+   */
+  getPublicInvitationByToken(token: string): Observable<InvitationPublicResponse> {
+    return this.http.get<InvitationPublicResponse>(`${this.API_URL}/token/${token}`)
+      .pipe(
+        catchError(error => {
+          console.error('Erreur lors de la récupération de l\'invitation publique:', error);
           return throwError(() => error);
         })
       );

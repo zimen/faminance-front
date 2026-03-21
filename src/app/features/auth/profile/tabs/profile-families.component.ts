@@ -12,10 +12,16 @@ import { Family } from '../../../../core/models/family.model';
     <div class="families-container">
       <div class="header-section">
         <h2 class="section-title">Mes Familles</h2>
-        <button class="btn-create" (click)="createFamily()">
-          <span class="btn-icon">➕</span>
-          Créer une famille
-        </button>
+        <div class="header-actions">
+          <button class="btn-join" (click)="joinFamily()">
+            <span class="btn-icon">🔑</span>
+            Rejoindre une famille
+          </button>
+          <button class="btn-create" (click)="createFamily()">
+            <span class="btn-icon">➕</span>
+            Créer une famille
+          </button>
+        </div>
       </div>
 
       <!-- Families Grid -->
@@ -103,19 +109,37 @@ import { Family } from '../../../../core/models/family.model';
       margin: 0;
     }
 
-    .btn-create {
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-join, .btn-create {
       display: flex;
       align-items: center;
       gap: 0.5rem;
       padding: 0.75rem 1.5rem;
-      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
       color: white;
       border: none;
       border-radius: 8px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s ease;
-      box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-join {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    .btn-join:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-create {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
     }
 
     .btn-create:hover {
@@ -350,7 +374,11 @@ import { Family } from '../../../../core/models/family.model';
         align-items: stretch;
       }
 
-      .btn-create {
+      .header-actions {
+        flex-direction: column;
+      }
+
+      .btn-join, .btn-create {
         width: 100%;
         justify-content: center;
       }
@@ -419,6 +447,10 @@ export class ProfileFamiliesComponent implements OnInit {
 
   manageFamily(familyId: number): void {
     this.router.navigate(['/families', familyId]);
+  }
+
+  joinFamily(): void {
+    this.router.navigate(['/join']);
   }
 
   createFamily(): void {

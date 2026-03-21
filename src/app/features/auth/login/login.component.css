@@ -126,3 +126,62 @@ input.error {
 .auth-footer a:hover {
   text-decoration: underline;
 }
+
+/* Bannière d'invitation */
+.invitation-banner {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: linear-gradient(135deg, #e0e7ff 0%, #e9d5ff 100%);
+  border-radius: 8px;
+  border: 1px solid #c7d2fe;
+}
+
+.invitation-loading,
+.invitation-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.invitation-loading {
+  color: #5b21b6;
+  font-size: 14px;
+}
+
+.invitation-info svg {
+  width: 24px;
+  height: 24px;
+  color: #5b21b6;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.invitation-text {
+  flex: 1;
+}
+
+.invitation-text strong {
+  color: #5b21b6;
+  font-weight: 600;
+}
+
+.invitation-text p {
+  margin: 4px 0 0 0;
+  color: #6b21a8;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(91, 33, 182, 0.3);
+  border-top-color: #5b21b6;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

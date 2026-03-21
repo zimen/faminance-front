@@ -1,9 +1,27 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap, catchError, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, tap, catchError, throwError, map } from 'rxjs';
 import { Family, FamilyMember, FamilyRequest, FamilyRole, FamilyQuickSetupRequest, FamilyQuickSetupResponse } from '../models';
+import { JoinByCodeRequest, JoinByCodeResponse } from '../models/invitation.model';
 import { StorageService } from './storage.service';
 import { environment } from '../../../environments/environment';
+
+/**
+ * Interface pour la réponse du backend qui peut inclure la liste des membres
+ */
+interface FamilyResponse {
+  id: number;
+  name: string;
+  description?: string;
+  color: string;
+  active: boolean;
+  membersCount?: number;
+  members?: FamilyMember[];
+  myRole: FamilyRole;
+  createdAt: string;
+  currency?: string;
+  joinCode?: string;
+}
 
 /**
  * FamilyService - Gestion des familles
@@ -29,8 +47,9 @@ export class FamilyService {
    * Récupère toutes les familles de l'utilisateur connecté
    */
   getMyFamilies(): Observable<Family[]> {
-    return this.http.get<Family[]>(this.API_URL)
+    return this.http.get<FamilyResponse[]>(this.API_URL)
       .pipe(
+        map(families => families.map(f => this.mapFamilyResponse(f))),
         catchError(error => {
           console.error('Erreur lors de la récupération des familles:', error);
           return throwError(() => error);
@@ -42,8 +61,9 @@ export class FamilyService {
    * Récupère une famille par son ID
    */
   getFamilyById(id: number): Observable<Family> {
-    return this.http.get<Family>(`${this.API_URL}/${id}`)
+    return this.http.get<FamilyResponse>(`${this.API_URL}/${id}`)
       .pipe(
+        map(f => this.mapFamilyResponse(f)),
         catchError(error => {
           console.error(`Erreur lors de la récupération de la famille ${id}:`, error);
           return throwError(() => error);
@@ -52,11 +72,31 @@ export class FamilyService {
   }
 
   /**
+   * Mappe la réponse du backend vers le modèle Family
+   * Calcule membersCount à partir du tableau members si nécessaire
+   */
+  private mapFamilyResponse(response: FamilyResponse): Family {
+    return {
+      id: response.id,
+      name: response.name,
+      description: response.description,
+      color: response.color,
+      active: response.active,
+      membersCount: response.membersCount ?? response.members?.length ?? 0,
+      myRole: response.myRole,
+      createdAt: response.createdAt,
+      currency: response.currency,
+      joinCode: response.joinCode
+    };
+  }
+
+  /**
    * Crée une nouvelle famille
    */
   createFamily(request: FamilyRequest): Observable<Family> {
-    return this.http.post<Family>(this.API_URL, request)
+    return this.http.post<FamilyResponse>(this.API_URL, request)
       .pipe(
+        map(f => this.mapFamilyResponse(f)),
         tap(family => {
           // Sélectionner automatiquement la nouvelle famille
           this.selectFamily(family);
@@ -91,8 +131,9 @@ export class FamilyService {
    * Nécessite le rôle ADMIN
    */
   updateFamily(id: number, request: FamilyRequest): Observable<Family> {
-    return this.http.put<Family>(`${this.API_URL}/${id}`, request)
+    return this.http.put<FamilyResponse>(`${this.API_URL}/${id}`, request)
       .pipe(
+        map(f => this.mapFamilyResponse(f)),
         tap(family => {
           // Si c'est la famille sélectionnée, mettre à jour
           if (this.selectedFamilySubject.value?.id === id) {
@@ -146,6 +187,12 @@ export class FamilyService {
   removeMember(familyId: number, memberId: number): Observable<void> {
     return this.http.delete<void>(`${this.API_URL}/${familyId}/members/${memberId}`)
       .pipe(
+        tap(() => {
+          // Si c'est la famille sélectionnée, rafraîchir le nombre de membres
+          if (this.selectedFamilySubject.value?.id === familyId) {
+            this.refreshSelectedFamily();
+          }
+        }),
         catchError(error => {
           console.error(`Erreur lors de la suppression du membre ${memberId}:`, error);
           return throwError(() => error);
@@ -167,6 +214,19 @@ export class FamilyService {
         return throwError(() => error);
       })
     );
+  }
+
+  /**
+   * Rafraîchit la famille sélectionnée (recharge depuis l'API)
+   */
+  refreshSelectedFamily(): void {
+    const currentFamily = this.selectedFamilySubject.value;
+    if (currentFamily) {
+      this.getFamilyById(currentFamily.id).subscribe({
+        next: family => this.selectedFamilySubject.next(family),
+        error: (err) => console.error('Erreur rafraîchissement famille:', err)
+      });
+    }
   }
 
   /**
@@ -222,11 +282,32 @@ export class FamilyService {
       this.getFamilyById(familyId).subscribe({
         next: family => this.selectedFamilySubject.next(family),
         error: () => {
-          // Si erreur, effacer la sélection
+          // Si erreur, effacer la sélection et charger la première famille disponible
           this.storageService.clearSelectedFamilyId();
+          this.loadFirstAvailableFamily();
         }
       });
+    } else {
+      // Aucune famille sélectionnée, charger la première disponible
+      this.loadFirstAvailableFamily();
     }
+  }
+
+  /**
+   * Charge et sélectionne la première famille disponible
+   */
+  private loadFirstAvailableFamily(): void {
+    this.getMyFamilies().subscribe({
+      next: families => {
+        if (families.length > 0) {
+          // Sélectionner la première famille
+          this.selectFamily(families[0]);
+        }
+      },
+      error: (err) => {
+        console.error('Erreur lors du chargement des familles:', err);
+      }
+    });
   }
 
   /**
@@ -252,5 +333,41 @@ export class FamilyService {
     };
 
     return roleHierarchy[family.myRole] >= roleHierarchy[minRole];
+  }
+
+  /**
+   * Rejoindre une famille avec un code court (ex: AB12-XY34)
+   */
+  joinFamilyByCode(request: JoinByCodeRequest): Observable<JoinByCodeResponse> {
+    return this.http.post<JoinByCodeResponse>(`${this.API_URL}/join`, request)
+      .pipe(
+        tap(response => {
+          // Recharger la liste des familles après avoir rejoint
+          this.getMyFamilies().subscribe();
+        }),
+        catchError(error => {
+          console.error('Erreur lors de la tentative de rejoindre la famille:', error);
+          return throwError(() => error);
+        })
+      );
+  }
+
+  /**
+   * Régénère le code court d'une famille (réservé ADMIN)
+   */
+  regenerateJoinCode(familyId: number): Observable<Family> {
+    return this.http.post<Family>(`${this.API_URL}/${familyId}/regenerate-join-code`, {})
+      .pipe(
+        tap(family => {
+          // Mettre à jour la famille sélectionnée si c'est celle-ci
+          if (this.getSelectedFamily()?.id === familyId) {
+            this.selectedFamilySubject.next(family);
+          }
+        }),
+        catchError(error => {
+          console.error('Erreur lors de la régénération du code:', error);
+          return throwError(() => error);
+        })
+      );
   }
 }

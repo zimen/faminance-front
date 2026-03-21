@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { BudgetLine, BudgetLineRequest, BUDGET_LINE_LIMITS } from '../../core/models/budget-line.model';
 import { BudgetLineService } from '../../core/services/budget-line.service';
 import { FamilyService } from '../../core/services/family.service';
+import { DialogService } from '../../shared/services/dialog.service';
 
 @Component({
   selector: 'app-budget-line-manager',
@@ -33,7 +34,8 @@ export class BudgetLineManagerComponent implements OnInit {
 
   constructor(
     private budgetLineService: BudgetLineService,
-    private familyService: FamilyService
+    private familyService: FamilyService,
+    private dialogService: DialogService
   ) {}
 
   ngOnInit(): void {
@@ -60,7 +62,7 @@ export class BudgetLineManagerComponent implements OnInit {
 
   openAddForm(): void {
     if (!this.canAddLine()) {
-      alert(`Vous ne pouvez pas ajouter plus de ${this.MAX_LINES} lignes par catégorie`);
+      this.dialogService.warning(`Vous ne pouvez pas ajouter plus de ${this.MAX_LINES} lignes par catégorie`);
       return;
     }
 
@@ -85,7 +87,7 @@ export class BudgetLineManagerComponent implements OnInit {
     if (!this.familyId || !this.budgetId || !this.categoryId) return;
 
     if (!this.currentLine.label || !this.currentLine.plannedAmount) {
-      alert('Le nom et le montant prévu sont requis');
+      this.dialogService.warning('Le nom et le montant prévu sont requis');
       return;
     }
 
@@ -122,14 +124,19 @@ export class BudgetLineManagerComponent implements OnInit {
     }
   }
 
-  deleteLine(line: BudgetLine): void {
+  async deleteLine(line: BudgetLine): Promise<void> {
     if (!this.familyId || !this.budgetId) return;
 
     const message = line.transactionCount > 0
       ? `Cette ligne a ${line.transactionCount} transaction(s) rattachée(s). Les transactions seront détachées. Continuer ?`
       : 'Êtes-vous sûr de vouloir supprimer cette ligne ?';
 
-    if (!confirm(message)) return;
+    const confirmed = await this.dialogService.confirm({
+      title: 'Supprimer la ligne',
+      message,
+      type: 'warning'
+    });
+    if (!confirmed) return;
 
     this.budgetLineService
       .deleteBudgetLine(this.familyId, this.budgetId, line.id)

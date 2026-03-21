@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { BudgetTemplateService } from '../../core/services/budget-template.service';
 import { BudgetInstanceService } from '../../core/services/budget-instance.service';
 import { FamilyService } from '../../core/services/family.service';
+import { DialogService } from '../../shared/services/dialog.service';
 import { BudgetTemplate } from '../../core/models/budget-template.model';
 
 @Component({
@@ -34,7 +35,8 @@ export class BudgetTemplateComponent implements OnInit {
     private budgetTemplateService: BudgetTemplateService,
     private budgetInstanceService: BudgetInstanceService,
     private familyService: FamilyService,
-    private router: Router
+    private router: Router,
+    private dialogService: DialogService
   ) {
     const now = new Date();
     this.applyMonth = now.getMonth() + 1;
@@ -87,20 +89,20 @@ export class BudgetTemplateComponent implements OnInit {
     this.router.navigate(['/budget-templates', templateId, 'edit']);
   }
 
-  deleteTemplate(templateId: number): void {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce modèle ?')) return;
+  async deleteTemplate(templateId: number): Promise<void> {
+    const confirmed = await this.dialogService.confirm('Êtes-vous sûr de vouloir supprimer ce modèle ?');
+    if (!confirmed) return;
 
     if (!this.selectedFamilyId) return;
 
     this.budgetTemplateService.deleteTemplate(this.selectedFamilyId, templateId).subscribe({
       next: () => {
-        this.successMessage = 'Modèle supprimé avec succès';
+        this.dialogService.success('Modèle supprimé avec succès');
         this.loadTemplates();
-        setTimeout(() => this.successMessage = '', 3000);
       },
       error: (err) => {
         console.error('Erreur lors de la suppression', err);
-        this.errorMessage = 'Erreur lors de la suppression du modèle';
+        this.dialogService.error('Erreur lors de la suppression du modèle');
       }
     });
   }

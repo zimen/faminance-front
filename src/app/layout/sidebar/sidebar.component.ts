@@ -159,6 +159,11 @@ export class SidebarComponent implements OnInit {
             badge: this.familiesCount
           },
           {
+            label: 'Rejoindre une famille',
+            icon: '🔑',
+            route: '/join'
+          },
+          {
             label: 'Invitations reçues',
             icon: '📬',
             route: '/profile/invitations',
@@ -184,6 +189,13 @@ export class SidebarComponent implements OnInit {
 
   isActive(route?: string): boolean {
     if (!route) return false;
+    
+    // Pour '/profile', vérifier match exact (éviter de matcher /profile/families, etc.)
+    if (route === '/profile') {
+      return this.router.url === '/profile';
+    }
+    
+    // Pour les autres routes, permettre les sous-routes
     return this.router.url === route || this.router.url.startsWith(route + '/');
   }
 }

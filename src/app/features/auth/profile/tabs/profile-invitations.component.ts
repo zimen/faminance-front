@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { DialogService } from '../../../../shared/services/dialog.service';
 
 interface ReceivedInvitation {
   id: number;
@@ -363,7 +364,10 @@ export class ProfileInvitationsComponent implements OnInit {
   allInvitations: ReceivedInvitation[] = [];
   isLoading = true;
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private dialogService: DialogService
+  ) {}
 
   ngOnInit(): void {
     this.loadInvitations();
@@ -421,31 +425,33 @@ export class ProfileInvitationsComponent implements OnInit {
     return labels[status] || status;
   }
 
-  acceptInvitation(invitation: ReceivedInvitation): void {
-    if (confirm(`Accepter l'invitation de ${invitation.familyName} ?`)) {
-      // TODO: Call API to accept invitation
-      console.log('Accepting invitation', invitation.id);
-      
-      // Update local state
-      invitation.status = 'ACCEPTED';
-      
-      // Reload families
-      setTimeout(() => {
-        alert('✅ Invitation acceptée ! Vous êtes maintenant membre de cette famille.');
-        window.location.reload();
-      }, 500);
-    }
+  async acceptInvitation(invitation: ReceivedInvitation): Promise<void> {
+    const confirmed = await this.dialogService.confirm(`Accepter l'invitation de ${invitation.familyName} ?`);
+    if (!confirmed) return;
+
+    // TODO: Call API to accept invitation
+    console.log('Accepting invitation', invitation.id);
+    
+    // Update local state
+    invitation.status = 'ACCEPTED';
+    
+    // Reload families
+    setTimeout(() => {
+      this.dialogService.success('✅ Invitation acceptée ! Vous êtes maintenant membre de cette famille.');
+      window.location.reload();
+    }, 500);
   }
 
-  declineInvitation(invitation: ReceivedInvitation): void {
-    if (confirm(`Refuser l'invitation de ${invitation.familyName} ?`)) {
-      // TODO: Call API to decline invitation
-      console.log('Declining invitation', invitation.id);
-      
-      // Update local state
-      invitation.status = 'DECLINED';
-      
-      alert('Invitation refusée');
-    }
+  async declineInvitation(invitation: ReceivedInvitation): Promise<void> {
+    const confirmed = await this.dialogService.confirm(`Refuser l'invitation de ${invitation.familyName} ?`);
+    if (!confirmed) return;
+
+    // TODO: Call API to decline invitation
+    console.log('Declining invitation', invitation.id);
+    
+    // Update local state
+    invitation.status = 'DECLINED';
+    
+    this.dialogService.info('Invitation refusée');
   }
 }

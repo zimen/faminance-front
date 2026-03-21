@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { InvitationService } from '../../../core/services/invitation.service';
 import { Invitation, InvitationStatus } from '../../../core/models';
+import { DialogService } from '../../../shared/services/dialog.service';
 
 /**
  * InvitationListComponent - Liste des invitations reçues et envoyées
@@ -23,7 +24,10 @@ export class InvitationListComponent implements OnInit {
   successMessage = '';
   errorMessage = '';
 
-  constructor(private invitationService: InvitationService) {}
+  constructor(
+    private invitationService: InvitationService,
+    private dialogService: DialogService
+  ) {}
 
   ngOnInit(): void {
     this.loadReceivedInvitations();
@@ -77,46 +81,46 @@ export class InvitationListComponent implements OnInit {
     });
   }
 
-  declineInvitation(invitation: Invitation): void {
-    if (confirm(`Refuser l'invitation de ${invitation.familyName} ?`)) {
-      this.processingInvitation = true;
-      this.successMessage = '';
-      this.errorMessage = '';
+  async declineInvitation(invitation: Invitation): Promise<void> {
+    const confirmed = await this.dialogService.confirm(`Refuser l'invitation de ${invitation.familyName} ?`);
+    if (!confirmed) return;
 
-      this.invitationService.declineInvitation(invitation.token).subscribe({
-        next: () => {
-          this.processingInvitation = false;
-          this.successMessage = 'Invitation refusée';
-          this.loadReceivedInvitations();
-          setTimeout(() => this.successMessage = '', 3000);
-        },
-        error: error => {
-          this.processingInvitation = false;
-          this.errorMessage = error.message || 'Erreur lors du refus de l\'invitation';
-        }
-      });
-    }
+    this.processingInvitation = true;
+    this.successMessage = '';
+    this.errorMessage = '';
+
+    this.invitationService.declineInvitation(invitation.token).subscribe({
+      next: () => {
+        this.processingInvitation = false;
+        this.dialogService.success('Invitation refusée');
+        this.loadReceivedInvitations();
+      },
+      error: error => {
+        this.processingInvitation = false;
+        this.errorMessage = error.message || 'Erreur lors du refus de l\'invitation';
+      }
+    });
   }
 
-  cancelInvitation(invitation: Invitation): void {
-    if (confirm(`Annuler l'invitation envoyée à ${invitation.email} ?`)) {
-      this.processingInvitation = true;
-      this.successMessage = '';
-      this.errorMessage = '';
+  async cancelInvitation(invitation: Invitation): Promise<void> {
+    const confirmed = await this.dialogService.confirm(`Annuler l'invitation envoyée à ${invitation.email} ?`);
+    if (!confirmed) return;
 
-      this.invitationService.cancelInvitation(invitation.id).subscribe({
-        next: () => {
-          this.processingInvitation = false;
-          this.successMessage = 'Invitation annulée';
-          this.loadSentInvitations();
-          setTimeout(() => this.successMessage = '', 3000);
-        },
-        error: error => {
-          this.processingInvitation = false;
-          this.errorMessage = error.message || 'Erreur lors de l\'annulation de l\'invitation';
-        }
-      });
-    }
+    this.processingInvitation = true;
+    this.successMessage = '';
+    this.errorMessage = '';
+
+    this.invitationService.cancelInvitation(invitation.id).subscribe({
+      next: () => {
+        this.processingInvitation = false;
+        this.dialogService.success('Invitation annulée');
+        this.loadSentInvitations();
+      },
+      error: error => {
+        this.processingInvitation = false;
+        this.errorMessage = error.message || 'Erreur lors de l\'annulation de l\'invitation';
+      }
+    });
   }
 
   getStatusLabel(status: InvitationStatus): string {

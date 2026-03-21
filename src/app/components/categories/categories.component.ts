@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { CategoryService } from '../../core/services/category.service';
 import { Category, CategoryRequest, CategoryType, SystemCategory } from '../../core/models/category.model';
 import { FamilyService } from '../../core/services/family.service';
+import { DialogService } from '../../shared/services/dialog.service';
 
 @Component({
   selector: 'app-categories',
@@ -52,7 +53,8 @@ export class CategoriesComponent implements OnInit {
 
   constructor(
     private categoryService: CategoryService,
-    private familyService: FamilyService
+    private familyService: FamilyService,
+    private dialogService: DialogService
   ) {}
 
   ngOnInit(): void {
@@ -152,22 +154,23 @@ export class CategoriesComponent implements OnInit {
     this.activeTab = tab;
   }
 
-  addSystemCategory(systemCategory: SystemCategory): void {
+  async addSystemCategory(systemCategory: SystemCategory): Promise<void> {
     if (!this.selectedFamilyId) {
       console.error('Aucune famille sélectionnée');
       return;
     }
 
-    if (confirm(`Ajouter "${systemCategory.name}" à vos catégories ?`)) {
-      this.categoryService.addSystemCategoryToFamily(this.selectedFamilyId, systemCategory)
-        .subscribe({
-          next: () => {
-            this.loadCategories();
-            this.loadSystemCategories(); // Recharger pour mettre à jour la liste
-          },
-          error: (err) => console.error('Erreur lors de l\'ajout de la catégorie système', err)
-        });
-    }
+    const confirmed = await this.dialogService.confirm(`Ajouter "${systemCategory.name}" à vos catégories ?`);
+    if (!confirmed) return;
+
+    this.categoryService.addSystemCategoryToFamily(this.selectedFamilyId, systemCategory)
+      .subscribe({
+        next: () => {
+          this.loadCategories();
+          this.loadSystemCategories(); // Recharger pour mettre à jour la liste
+        },
+        error: (err) => console.error('Erreur lors de l\'ajout de la catégorie système', err)
+      });
   }
 
   isSystemCategory(category: Category): boolean {
@@ -222,18 +225,23 @@ export class CategoriesComponent implements OnInit {
     }
   }
 
-  deleteCategory(id: number): void {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ? Toutes les transactions associées seront affectées.')) {
-      if (!this.selectedFamilyId) {
-        console.error('Aucune famille sélectionnée');
-        return;
-      }
+  async deleteCategory(id: number): Promise<void> {
+    const confirmed = await this.dialogService.confirm({
+      title: 'Supprimer la catégorie',
+      message: 'Êtes-vous sûr de vouloir supprimer cette catégorie ? Toutes les transactions associées seront affectées.',
+      type: 'warning'
+    });
+    if (!confirmed) return;
 
-      this.categoryService.deleteCategory(this.selectedFamilyId, id).subscribe({
-        next: () => this.loadCategories(),
-        error: (err) => console.error('Erreur lors de la suppression', err)
-      });
+    if (!this.selectedFamilyId) {
+      console.error('Aucune famille sélectionnée');
+      return;
     }
+
+    this.categoryService.deleteCategory(this.selectedFamilyId, id).subscribe({
+      next: () => this.loadCategories(),
+      error: (err) => console.error('Erreur lors de la suppression', err)
+    });
   }
 
   closeForm(): void {

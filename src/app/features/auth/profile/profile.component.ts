@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { User } from '../../../core/models';
+import { DialogService } from '../../../shared/services/dialog.service';
 
 interface Tab {
   label: string;
@@ -32,7 +33,8 @@ export class ProfileComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
-    public router: Router
+    public router: Router,
+    private dialogService: DialogService
   ) {}
 
   ngOnInit(): void {
@@ -50,9 +52,10 @@ export class ProfileComponent implements OnInit {
     return this.router.url.startsWith(route);
   }
 
-  logout(): void {
-    if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
-      this.authService.logout();
-    }
+  async logout(): Promise<void> {
+    const confirmed = await this.dialogService.confirm('Êtes-vous sûr de vouloir vous déconnecter ?');
+    if (!confirmed) return;
+
+    this.authService.logout();
   }
 }

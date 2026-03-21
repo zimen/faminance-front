@@ -8,6 +8,7 @@ import { BudgetLine, BudgetLineRequest } from '../../core/models/budget-line.mod
 import { Category, CategoryType } from '../../core/models/category.model';
 import { FamilyService } from '../../core/services/family.service';
 import { BudgetLineService } from '../../core/services/budget-line.service';
+import { DialogService } from '../../shared/services/dialog.service';
 
 @Component({
   selector: 'app-budget',
@@ -48,7 +49,8 @@ export class BudgetComponent implements OnInit {
     private budgetInstanceService: BudgetInstanceService,
     private budgetLineService: BudgetLineService,
     private categoryService: CategoryService,
-    private familyService: FamilyService
+    private familyService: FamilyService,
+    private dialogService: DialogService
   ) {
     const now = new Date();
     this.currentMonth = now.getMonth() + 1;
@@ -125,9 +127,10 @@ export class BudgetComponent implements OnInit {
     this.showBudgetWizard = true;
   }
 
-  closeBudgetWizard(): void {
+  async closeBudgetWizard(): Promise<void> {
     if (this.wizardLines.length > 0) {
-      if (!confirm('Vous avez des lignes non sauvegardées. Voulez-vous vraiment quitter ?')) {
+      const confirmed = await this.dialogService.confirm('Vous avez des lignes non sauvegardées. Voulez-vous vraiment quitter ?');
+      if (!confirmed) {
         return;
       }
     }
@@ -255,12 +258,12 @@ export class BudgetComponent implements OnInit {
 
   async createBudgetWithLines(): Promise<void> {
     if (!this.selectedFamilyId) {
-      alert('Aucune famille sélectionnée');
+      this.dialogService.error('Aucune famille sélectionnée');
       return;
     }
 
     if (this.wizardLines.length === 0) {
-      alert('Veuillez ajouter au moins une ligne budgétaire');
+      this.dialogService.warning('Veuillez ajouter au moins une ligne budgétaire');
       return;
     }
 
@@ -299,7 +302,7 @@ export class BudgetComponent implements OnInit {
       this.isCreatingBudget = false;
     } catch (err: any) {
       console.error('Erreur création budget', err);
-      alert('Erreur lors de la création du budget: ' + (err.error?.message || err.message));
+      this.dialogService.error('Erreur lors de la création du budget: ' + (err.error?.message || err.message));
       this.isCreatingBudget = false;
     }
   }
@@ -375,8 +378,9 @@ export class BudgetComponent implements OnInit {
     }
   }
 
-  deleteLine(categoryId: number, lineId: number): void {
-    if (!confirm('Supprimer cette ligne budgétaire ?')) return;
+  async deleteLine(categoryId: number, lineId: number): Promise<void> {
+    const confirmed = await this.dialogService.confirm('Supprimer cette ligne budgétaire ?');
+    if (!confirmed) return;
 
     if (!this.selectedFamilyId || !this.budgetInstance) return;
 

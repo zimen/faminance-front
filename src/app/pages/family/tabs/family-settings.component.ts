@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { FamilyService } from '../../../core/services/family.service';
+import { DialogService } from '../../../shared/services/dialog.service';
 import { Family } from '../../../core/models/family.model';
 
 @Component({
@@ -86,6 +87,54 @@ import { Family } from '../../../core/models/family.model';
           <div class="info-box">
             <span class="info-icon">ℹ️</span>
             <p class="info-text">La gestion des permissions sera disponible prochainement</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Join Code Section -->
+      <div class="settings-section">
+        <h3 class="subsection-title">Code d'invitation</h3>
+        <div class="code-card">
+          <div class="code-description">
+            <p class="code-text">
+              Partagez ce code avec les personnes que vous souhaitez inviter. 
+              Elles pourront rejoindre la famille en entrant simplement ce code.
+            </p>
+          </div>
+
+          <div class="code-display" *ngIf="family?.joinCode">
+            <div class="code-wrapper">
+              <span class="code-value">{{ family?.joinCode }}</span>
+              <button class="btn-copy" (click)="copyJoinCode()" [class.copied]="codeCopied">
+                <span *ngIf="!codeCopied">📋</span>
+                <span *ngIf="codeCopied">✓</span>
+                {{ codeCopied ? 'Copié !' : 'Copier' }}
+              </button>
+            </div>
+          </div>
+
+          <div class="code-info">
+            <div class="info-item">
+              <span class="info-icon">🔗</span>
+              <span class="info-label">Les utilisateurs peuvent utiliser ce code sur la page</span>
+              <a href="/join" target="_blank" class="info-link">/join</a>
+            </div>
+          </div>
+
+          <div class="code-actions">
+            <button class="btn-regenerate" (click)="regenerateJoinCode()" [disabled]="isRegenerating">
+              <span *ngIf="!isRegenerating">🔄</span>
+              <span class="spinner-small" *ngIf="isRegenerating"></span>
+              {{ isRegenerating ? 'Régénération...' : 'Régénérer le code' }}
+            </button>
+          </div>
+
+          <div class="info-box warning-box">
+            <span class="info-icon">⚠️</span>
+            <p class="info-text">
+              Lorsque vous régénérez le code, l'ancien code ne fonctionnera plus. 
+              Assurez-vous que personne n'utilise l'ancien code avant de le régénérer.
+            </p>
           </div>
         </div>
       </div>
@@ -325,6 +374,144 @@ import { Family } from '../../../core/models/family.model';
       font-size: 0.9rem;
     }
 
+    /* Join Code Section */
+    .code-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+
+    .code-description {
+      margin-bottom: 1.5rem;
+    }
+
+    .code-text {
+      margin: 0;
+      color: #64748b;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    .code-display {
+      margin-bottom: 1.5rem;
+    }
+
+    .code-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      border: 2px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+    }
+
+    .code-value {
+      flex: 1;
+      font-size: 1.75rem;
+      font-weight: 700;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 0.15em;
+      color: #6366f1;
+      text-align: center;
+    }
+
+    .btn-copy {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1.25rem;
+      background: #6366f1;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9375rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .btn-copy:hover {
+      background: #4f46e5;
+      transform: scale(1.05);
+    }
+
+    .btn-copy.copied {
+      background: #10b981;
+    }
+
+    .code-info {
+      margin-bottom: 1.5rem;
+    }
+
+    .info-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      background: #f8fafc;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      color: #475569;
+      flex-wrap: wrap;
+    }
+
+    .info-label {
+      flex-shrink: 0;
+    }
+
+    .info-link {
+      color: #6366f1;
+      text-decoration: none;
+      font-weight: 600;
+      font-family: monospace;
+    }
+
+    .info-link:hover {
+      text-decoration: underline;
+    }
+
+    .code-actions {
+      margin-bottom: 1rem;
+    }
+
+    .btn-regenerate {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      width: 100%;
+    }
+
+    .btn-regenerate:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+
+    .btn-regenerate:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .warning-box {
+      background: #fffbeb;
+      border-color: #fde68a;
+    }
+
+    .warning-box .info-text {
+      color: #92400e;
+    }
+
     /* Danger Zone */
     .danger-section {
       border-top: 2px solid #fee2e2;
@@ -398,10 +585,13 @@ import { Family } from '../../../core/models/family.model';
 export class FamilySettingsComponent implements OnInit {
   family: Family | null = null;
   isSaving = false;
+  isRegenerating = false;
+  codeCopied = false;
 
   constructor(
     private familyService: FamilyService,
-    private router: Router
+    private router: Router,
+    private dialogService: DialogService
   ) {}
 
   ngOnInit(): void {
@@ -424,38 +614,91 @@ export class FamilySettingsComponent implements OnInit {
     this.familyService.updateFamily(this.family.id, this.family).subscribe({
       next: () => {
         this.isSaving = false;
-        alert('✅ Modifications enregistrées avec succès !');
+        this.dialogService.success('Modifications enregistrées avec succès !');
       },
       error: (err) => {
         console.error('Erreur sauvegarde famille', err);
         this.isSaving = false;
-        alert('❌ Erreur lors de l\'enregistrement');
+        this.dialogService.error('Erreur lors de l\'enregistrement');
       }
     });
   }
 
-  confirmDelete(): void {
+  /**
+   * Copie le code d'invitation dans le presse-papiers
+   */
+  copyJoinCode(): void {
+    if (!this.family?.joinCode) return;
+
+    navigator.clipboard.writeText(this.family.joinCode).then(() => {
+      this.codeCopied = true;
+      setTimeout(() => {
+        this.codeCopied = false;
+      }, 2000);
+    }).catch(() => {
+      this.dialogService.error('Erreur lors de la copie du code');
+    });
+  }
+
+  /**
+   * Régénère le code d'invitation
+   */
+  async regenerateJoinCode(): Promise<void> {
     if (!this.family) return;
 
-    const confirmed = confirm(
-      `⚠️ ATTENTION !\n\n` +
-      `Êtes-vous sûr de vouloir supprimer la famille "${this.family.name}" ?\n\n` +
-      `Cette action est IRRÉVERSIBLE et supprimera :\n` +
-      `- Tous les membres\n` +
-      `- Toutes les transactions\n` +
-      `- Tous les budgets\n` +
-      `- Toutes les catégories\n\n` +
-      `Tapez le nom de la famille pour confirmer.`
-    );
+    const confirmed = await this.dialogService.confirm({
+      title: 'Régénérer le code',
+      message: 'Le code actuel ne fonctionnera plus après régénération.\nLes personnes utilisant l\'ancien code ne pourront plus rejoindre la famille.\n\nVoulez-vous continuer ?',
+      type: 'warning',
+      confirmText: 'Régénérer',
+      cancelText: 'Annuler'
+    });
 
     if (!confirmed) return;
 
-    const familyName = prompt(`Tapez "${this.family.name}" pour confirmer la suppression :`);
+    this.isRegenerating = true;
+    this.familyService.regenerateJoinCode(this.family.id).subscribe({
+      next: (updatedFamily) => {
+        this.family = { ...updatedFamily };
+        this.isRegenerating = false;
+        this.dialogService.success('Nouveau code généré avec succès !');
+      },
+      error: (err) => {
+        console.error('Erreur régénération code', err);
+        this.isRegenerating = false;
+        this.dialogService.error('Erreur lors de la régénération du code');
+      }
+    });
+  }
+
+  async confirmDelete(): Promise<void> {
+    if (!this.family) return;
+
+    const confirmed = await this.dialogService.confirm({
+      title: 'Supprimer la famille',
+      message: `Êtes-vous sûr de vouloir supprimer la famille "${this.family.name}" ?\n\n` +
+        `Cette action est IRRÉVERSIBLE et supprimera :\n` +
+        `- Tous les membres\n` +
+        `- Toutes les transactions\n` +
+        `- Tous les budgets\n` +
+        `- Toutes les catégories`,
+      type: 'error',
+      confirmText: 'Continuer',
+      cancelText: 'Annuler'
+    });
+
+    if (!confirmed) return;
+
+    const familyName = await this.dialogService.prompt({
+      title: 'Confirmation de suppression',
+      message: `Tapez "${this.family.name}" pour confirmer la suppression :`,
+      placeholder: this.family.name
+    });
     
     if (familyName === this.family.name) {
       this.deleteFamily();
     } else if (familyName !== null) {
-      alert('❌ Le nom ne correspond pas. Suppression annulée.');
+      this.dialogService.error('Le nom ne correspond pas. Suppression annulée.');
     }
   }
 
@@ -464,12 +707,12 @@ export class FamilySettingsComponent implements OnInit {
 
     this.familyService.deleteFamily(this.family.id).subscribe({
       next: () => {
-        alert('✅ Famille supprimée avec succès');
+        this.dialogService.success('Famille supprimée avec succès');
         this.router.navigate(['/families']);
       },
       error: (err) => {
         console.error('Erreur suppression famille', err);
-        alert('❌ Erreur lors de la suppression');
+        this.dialogService.error('Erreur lors de la suppression');
       }
     });
   }

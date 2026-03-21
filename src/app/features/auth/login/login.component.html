@@ -3,6 +3,31 @@
     <h1>Connexion</h1>
     <p class="subtitle">Bienvenue sur Family Finance</p>
 
+    <!-- Bannière d'invitation -->
+    <div *ngIf="invitationToken" class="invitation-banner">
+      <div *ngIf="loadingInvitation" class="invitation-loading">
+        <span class="spinner-small"></span>
+        <span>Chargement de l'invitation...</span>
+      </div>
+      <div *ngIf="!loadingInvitation && invitationDetails" class="invitation-info">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
+        </svg>
+        <div class="invitation-text">
+          <strong>Vous avez été invité !</strong>
+          <p>Connectez-vous pour rejoindre la famille <strong>{{ invitationDetails.familyName }}</strong></p>
+        </div>
+      </div>
+      <div *ngIf="!loadingInvitation && !invitationDetails" class="invitation-info">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <div class="invitation-text">
+          <p>Connectez-vous pour accepter l'invitation</p>
+        </div>
+      </div>
+    </div>
+
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
       <!-- Email -->
       <div class="form-group">

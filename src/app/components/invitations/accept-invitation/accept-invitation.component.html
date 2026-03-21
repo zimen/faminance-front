@@ -1,0 +1,118 @@
+<div class="accept-invitation-container">
+  <div class="invitation-card">
+    <!-- En-tête avec icône -->
+    <div class="card-header">
+      <div class="icon-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
+        </svg>
+      </div>
+      <h1>Invitation à rejoindre une famille</h1>
+    </div>
+
+    <!-- État de chargement -->
+    <div *ngIf="isLoading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Chargement de l'invitation...</p>
+    </div>
+
+    <!-- Message d'erreur -->
+    <div *ngIf="error && !isLoading" class="error-state">
+      <div class="error-icon">⚠️</div>
+      <p class="error-message">{{ error }}</p>
+      <a routerLink="/dashboard" class="btn btn-secondary">Retour au tableau de bord</a>
+    </div>
+
+    <!-- Message de succès -->
+    <div *ngIf="success" class="success-state">
+      <div class="success-icon">✓</div>
+      <h2>Invitation acceptée !</h2>
+      <p>Vous avez rejoint la famille <strong>{{ invitation?.familyName }}</strong></p>
+      <p class="redirect-info">Redirection en cours...</p>
+    </div>
+
+    <!-- Détails de l'invitation (utilisateur non connecté) -->
+    <div *ngIf="invitation && !isAuthenticated && !isLoading && !error && !success" class="invitation-details">
+      <div class="family-info">
+        <h2>{{ invitation.familyName }}</h2>
+        <p class="description" *ngIf="invitation.familyDescription">{{ invitation.familyDescription }}</p>
+      </div>
+
+      <div class="invitation-meta">
+        <div class="meta-item">
+          <span class="label">Invité par :</span>
+          <span class="value">{{ invitation.invitedBy }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="label">Rôle proposé :</span>
+          <span class="value">
+            <span [class]="'role-badge ' + getRoleBadgeClass(invitation.proposedRole)">
+              {{ translateRole(invitation.proposedRole) }}
+            </span>
+          </span>
+        </div>
+        <div class="meta-item" *ngIf="invitation.message">
+          <span class="label">Message :</span>
+          <p class="message">{{ invitation.message }}</p>
+        </div>
+        <div class="meta-item">
+          <span class="label">Expire le :</span>
+          <span class="value">{{ invitation.expiresAt | date: 'dd/MM/yyyy à HH:mm' }}</span>
+        </div>
+      </div>
+
+      <div class="auth-actions">
+        <p class="auth-prompt">Pour accepter cette invitation, vous devez être connecté(e)</p>
+        <div class="button-group">
+          <button class="btn btn-primary" (click)="goToLogin()">
+            Se connecter
+          </button>
+          <button class="btn btn-secondary" (click)="goToRegister()">
+            Créer un compte
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Détails de l'invitation (utilisateur connecté) -->
+    <div *ngIf="invitation && isAuthenticated && !isLoading && !error && !success" class="invitation-details authenticated">
+      <div class="family-info">
+        <h2>{{ invitation.familyName }}</h2>
+        <p class="description" *ngIf="invitation.familyDescription">{{ invitation.familyDescription }}</p>
+      </div>
+
+      <div class="invitation-meta">
+        <div class="meta-item">
+          <span class="label">Invité par :</span>
+          <span class="value">{{ invitation.invitedBy }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="label">Vous rejoindrez avec le rôle :</span>
+          <span class="value">
+            <span [class]="'role-badge ' + getRoleBadgeClass(invitation.proposedRole)">
+              {{ translateRole(invitation.proposedRole) }}
+            </span>
+          </span>
+        </div>
+        <div class="meta-item" *ngIf="invitation.message">
+          <span class="label">Message :</span>
+          <p class="message">{{ invitation.message }}</p>
+        </div>
+      </div>
+
+      <div class="accept-actions">
+        <button 
+          class="btn btn-primary btn-large" 
+          (click)="acceptInvitation()"
+          [disabled]="isAccepting">
+          <span *ngIf="!isAccepting">Accepter l'invitation</span>
+          <span *ngIf="isAccepting" class="loading-text">
+            <span class="spinner-small"></span>
+            Acceptation en cours...
+          </span>
+        </button>
+        <a routerLink="/dashboard" class="btn btn-text">Peut-être plus tard</a>
+      </div>
+    </div>
+  </div>
+</div>
