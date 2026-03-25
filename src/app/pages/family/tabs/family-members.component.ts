@@ -21,12 +21,12 @@ import { FamilyMember } from '../../../core/models/family.model';
       <!-- Members List -->
       <div class="members-grid" *ngIf="members.length > 0">
         <div class="member-card" *ngFor="let member of members">
-          <div class="member-avatar">
-            {{ getInitials(member.fullName) }}
+          <div class="member-avatar" [style.background]="member.color || 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'">
+            {{ getInitials(member.nickname || member.username) }}
           </div>
           <div class="member-info">
-            <div class="member-name">{{ member.fullName }}</div>
-            <div class="member-email">{{ member.username }}</div>
+            <div class="member-name">{{ member.nickname || member.username }}</div>
+            <div class="member-email">{{ member.userFullName }}</div>
           </div>
           <div class="member-role" [class]="'role-' + member.role.toLowerCase()">
             {{ getRoleLabel(member.role) }}
@@ -169,6 +169,11 @@ import { FamilyMember } from '../../../core/models/family.model';
       color: white;
     }
 
+    .role-member {
+      background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+      color: white;
+    }
+
     .role-child {
       background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
       color: white;
@@ -308,6 +313,7 @@ export class FamilyMembersComponent implements OnInit {
     const labels: { [key: string]: string } = {
       'ADMIN': 'Administrateur',
       'PARENT': 'Parent',
+      'MEMBER': 'Membre',
       'CHILD': 'Enfant'
     };
     return labels[role] || role;

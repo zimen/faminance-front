@@ -28,14 +28,16 @@ export interface Family {
  */
 export interface FamilyMember {
   id: number;
+  familyId: number;
+  familyName: string;
   userId: number;
   username: string;
-  fullName: string;
-  nickname?: string;
-  avatarUrl?: string;
+  userFullName: string;
   role: FamilyRole;
-  color: string;
+  nickname?: string;
+  color?: string | null;
   active: boolean;
+  createdAt: string;
 }
 
 /**

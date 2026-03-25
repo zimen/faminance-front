@@ -6,8 +6,14 @@
 
   <!-- En-tête -->
   <div class="header">
-    <h1>Créons votre famille 👨‍👩‍👧‍👦</h1>
-    <p class="subtitle">Quelques informations pour personnaliser votre expérience</p>
+    <h1 *ngIf="mode === 'choice'">Configurons votre famille 👨‍👩‍👧‍👦</h1>
+    <h1 *ngIf="mode === 'create'">Créons votre famille 🏠</h1>
+    <h1 *ngIf="mode === 'join'">Rejoignez une famille 🔗</h1>
+    
+    <p class="subtitle" *ngIf="mode === 'choice'">Choisissez comment vous souhaitez continuer</p>
+    <p class="subtitle" *ngIf="mode === 'create'">Quelques informations pour personnaliser votre expérience</p>
+    <p class="subtitle" *ngIf="mode === 'join'">Saisissez le code d'invitation que vous avez reçu</p>
+    
     <div class="steps-indicator">
       <span class="step completed">✓</span>
       <span class="separator">•</span>
@@ -19,9 +25,37 @@
     </div>
   </div>
 
-  <!-- Formulaire -->
-  <div class="form-container">
-    <form [formGroup]="familyForm" (ngSubmit)="onSubmit()">
+  <!-- ========== MODE CHOIX ========== -->
+  <div class="form-container" *ngIf="mode === 'choice'">
+    <div class="choice-cards">
+      <!-- Carte : Créer une famille -->
+      <div class="choice-card" (click)="selectCreateMode()">
+        <div class="card-icon">🏠</div>
+        <h3>Créer ma famille</h3>
+        <p>Commencez votre gestion financière en créant une nouvelle famille</p>
+        <div class="card-action">→</div>
+      </div>
+
+      <!-- Carte : Rejoindre une famille -->
+      <div class="choice-card" (click)="selectJoinMode()">
+        <div class="card-icon">🔗</div>
+        <h3>Rejoindre une famille</h3>
+        <p>Vous avez reçu un code d'invitation ? Rejoignez une famille existante</p>
+        <div class="card-action">→</div>
+      </div>
+    </div>
+
+    <!-- Bouton retour -->
+    <div class="button-group single">
+      <button type="button" class="btn-secondary" (click)="onBack()">
+        ← Retour
+      </button>
+    </div>
+  </div>
+
+  <!-- ========== MODE CRÉATION ========== -->
+  <div class="form-container" *ngIf="mode === 'create'">
+    <form [formGroup]="familyForm" (ngSubmit)="onSubmitCreate()">
       <!-- Prénom -->
       <div class="form-group">
         <label for="firstName">Votre prénom</label>
@@ -91,6 +125,63 @@
         <p>
           Elles permettent de personnaliser votre espace familial et de faciliter la 
           collaboration avec les autres membres.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== MODE JOINTURE ========== -->
+  <div class="form-container" *ngIf="mode === 'join'">
+    <form [formGroup]="joinForm" (ngSubmit)="onSubmitJoin()">
+      <!-- Code d'invitation -->
+      <div class="form-group">
+        <label for="code">Code d'invitation</label>
+        <input
+          id="code"
+          type="text"
+          formControlName="code"
+          placeholder="XXXX-XXXX"
+          maxlength="9"
+          (input)="onCodeInput($event)"
+          [class.error]="joinForm.get('code')?.invalid && joinForm.get('code')?.touched"
+          class="code-input"
+        />
+        <div class="help-text">Format : XXXX-XXXX (8 caractères)</div>
+        <div class="error-message" *ngIf="joinForm.get('code')?.invalid && joinForm.get('code')?.touched">
+          <span *ngIf="joinForm.get('code')?.errors?.['required']">Le code est requis</span>
+          <span *ngIf="joinForm.get('code')?.errors?.['pattern']">Format invalide (XXXX-XXXX)</span>
+        </div>
+      </div>
+
+      <!-- Message d'erreur global -->
+      <div class="alert alert-error" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Message de succès -->
+      <div class="alert alert-success" *ngIf="successMessage">
+        {{ successMessage }}
+      </div>
+
+      <!-- Boutons -->
+      <div class="button-group">
+        <button type="button" class="btn-secondary" (click)="onBack()" [disabled]="loading">
+          ← Retour
+        </button>
+        <button type="submit" class="btn-primary" [disabled]="loading || joinForm.invalid">
+          {{ loading ? 'Vérification...' : 'Rejoindre' }}
+        </button>
+      </div>
+    </form>
+
+    <!-- Info card -->
+    <div class="info-card">
+      <div class="info-icon">❓</div>
+      <div class="info-text">
+        <strong>Où trouver le code ?</strong>
+        <p>
+          Le code d'invitation vous a été envoyé par email ou communiqué par un membre 
+          de la famille que vous souhaitez rejoindre.
         </p>
       </div>
     </div>

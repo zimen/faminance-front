@@ -6,6 +6,7 @@ import { User, AuthResponse, LoginRequest, RegisterRequest } from '../models';
 import { StorageService } from './storage.service';
 import { environment } from '../../../environments/environment';
 import { OnboardingService } from './onboarding.service';
+import { FamilyService } from './family.service';
 
 /**
  * AuthService - Gestion de l'authentification
@@ -20,6 +21,7 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
   private onboardingService?: OnboardingService; // Injection tardive pour éviter la dépendance circulaire
+  private familyService?: FamilyService; // Injection tardive pour éviter la dépendance circulaire
   
   constructor(
     private http: HttpClient,
@@ -37,12 +39,24 @@ export class AuthService {
   }
 
   /**
+   * Définit le FamilyService (injection tardive pour éviter la dépendance circulaire)
+   */
+  setFamilyService(familyService: FamilyService): void {
+    this.familyService = familyService;
+  }
+
+  /**
    * Inscription d'un nouveau utilisateur
    */
   register(request: RegisterRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.API_URL}/register`, request)
       .pipe(
-        tap(response => this.handleAuthResponse(response)),
+        tap(response => {
+          this.handleAuthResponse(response);
+          // Initialiser FamilyService après l'inscription
+          // (même s'il n'y a pas encore de famille, cela nettoie l'état)
+          this.initializeFamilyAfterAuth();
+        }),
         catchError(error => {
           console.error('Erreur lors de l\'inscription:', error);
           return throwError(() => error);
@@ -60,6 +74,8 @@ export class AuthService {
           this.handleAuthResponse(response);
           // Synchroniser le statut d'onboarding après connexion
           this.syncOnboardingAfterAuth();
+          // Initialiser FamilyService après connexion
+          this.initializeFamilyAfterAuth();
         }),
         catchError(error => {
           console.error('Erreur lors de la connexion:', error);
@@ -192,6 +208,16 @@ export class AuthService {
           console.warn('Impossible de synchroniser le statut d\'onboarding:', error);
         }
       });
+    }
+  }
+
+  /**
+   * Initialise le FamilyService après authentification
+   * Charge la famille sélectionnée ou la première disponible
+   */
+  private initializeFamilyAfterAuth(): void {
+    if (this.familyService) {
+      this.familyService.initializeAfterLogin();
     }
   }
 

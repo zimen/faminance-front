@@ -311,6 +311,15 @@ export class FamilyService {
   }
 
   /**
+   * Initialise le service après une connexion réussie
+   * Recharge la famille sélectionnée ou la première disponible
+   */
+  public initializeAfterLogin(): void {
+    console.log('Initialisation du FamilyService après connexion');
+    this.loadSelectedFamily();
+  }
+
+  /**
    * Vérifie si l'utilisateur a un rôle spécifique dans la famille sélectionnée
    */
   hasRole(role: FamilyRole): boolean {

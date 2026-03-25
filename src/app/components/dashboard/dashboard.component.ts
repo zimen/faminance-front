@@ -27,6 +27,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   budgets: Budget[] = [];
   recentTransactions: Transaction[] = [];
   loading = true;
+  loadingFamily = true; // Indicateur de chargement de la famille
   currentFamily?: Family;
   private familySubscription?: Subscription;
   
@@ -50,6 +51,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // S'abonner aux changements de famille sélectionnée
     this.familySubscription = this.familyService.selectedFamily$.subscribe(family => {
+      this.loadingFamily = false; // La famille a été chargée (même si null)
       this.currentFamily = family || undefined;
       if (family) {
         this.loadData(family.id);

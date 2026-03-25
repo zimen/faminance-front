@@ -81,7 +81,7 @@
           <select [(ngModel)]="currentTransaction.familyMemberId" name="familyMemberId">
             <option [value]="undefined">-- Non spécifié --</option>
             <option *ngFor="let member of members" [value]="member.id">
-              {{ member.fullName }}{{ member.nickname ? ' (' + member.nickname + ')' : '' }}
+              {{ member.nickname || member.username }}{{ member.nickname && member.username !== member.nickname ? ' (' + member.username + ')' : '' }}
             </option>
           </select>
         </div>
@@ -142,7 +142,7 @@
           🎯 {{ transaction.budgetLine.label }}
         </div>
         <div *ngIf="transaction.memberName || transaction.familyMember" class="transaction-member">
-          👤 {{ transaction.memberName || transaction.familyMember?.nickname || transaction.familyMember?.fullName }}
+          👤 {{ transaction.memberName || transaction.familyMember?.nickname || transaction.familyMember?.username }}
         </div>
         <div class="transaction-date">{{ transaction.date | date:'dd/MM/yyyy' }}</div>
       </div>

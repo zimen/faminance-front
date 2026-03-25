@@ -126,6 +126,11 @@
         {{ errorMessage }}
       </div>
 
+      <!-- Message de succès -->
+      <div class="alert alert-success" *ngIf="registrationSuccess">
+        {{ successMessage }}
+      </div>
+
       <!-- Bouton de soumission -->
       <button 
         type="submit" 

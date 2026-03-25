@@ -61,14 +61,14 @@ export class JoinByCodeComponent implements OnInit {
     this.error = null;
 
     const request: JoinByCodeRequest = {
-      code: this.codeForm.value.code
+      joinCode: this.codeForm.value.code
     };
 
     this.familyService.joinFamilyByCode(request)
       .pipe(
         tap(response => {
           this.success = true;
-          this.joinedFamilyName = response.familyName;
+          this.joinedFamilyName = response.name;
           this.isSubmitting = false;
 
           // Rediriger vers le dashboard après 2 secondes

@@ -56,14 +56,35 @@ export interface InvitationPublicResponse {
  * JoinByCodeRequest - Données pour rejoindre une famille par code
  */
 export interface JoinByCodeRequest {
-  code: string;
+  joinCode: string;
 }
 
 /**
  * JoinByCodeResponse - Réponse après avoir rejoint par code
+ * L'API retourne un objet Family complet avec tous les membres
  */
 export interface JoinByCodeResponse {
-  familyId: number;
-  familyName: string;
-  role: FamilyRole;
+  id: number;
+  name: string;
+  description?: string;
+  color: string;
+  active: boolean;
+  joinCode: string;
+  memberCount: number;
+  myRole: FamilyRole;
+  createdAt: string;
+  updatedAt: string;
+  members?: Array<{
+    id: number;
+    familyId: number;
+    familyName: string;
+    userId: number;
+    username: string;
+    userFullName: string;
+    role: FamilyRole;
+    nickname?: string;
+    color?: string;
+    active: boolean;
+    createdAt: string;
+  }>;
 }

@@ -20,6 +20,8 @@ export class Step1RegisterComponent implements OnInit {
   loading = false;
   errorMessage = '';
   showPassword = false;
+  registrationSuccess = false;
+  successMessage = '';
 
   // Invitation context
   invitationToken: string | null = null;
@@ -89,17 +91,28 @@ export class Step1RegisterComponent implements OnInit {
 
     this.onboardingService.completeRegistration(email, password).subscribe({
       next: () => {
-        // Si on vient d'une invitation, l'accepter automatiquement
-        if (this.invitationToken) {
-          this.autoAcceptInvitation();
-        } else {
-          // Sinon, passer à l'étape de configuration de famille
-          this.onboardingService.nextStep();
-          this.router.navigate(['/onboarding/family-setup']);
-        }
+        // Afficher le message de succès
+        this.registrationSuccess = true;
+        this.errorMessage = '';
+        this.successMessage = '✅ Compte créé avec succès !';
+        
+        // Attendre 1.5 secondes pour montrer le message de succès
+        setTimeout(() => {
+          this.loading = false;
+          
+          // Si on vient d'une invitation, l'accepter automatiquement
+          if (this.invitationToken) {
+            this.autoAcceptInvitation();
+          } else {
+            // Sinon, passer à l'étape de configuration de famille
+            this.onboardingService.nextStep();
+            this.router.navigate(['/onboarding/family-setup']);
+          }
+        }, 1500);
       },
       error: (error) => {
         this.loading = false;
+        this.registrationSuccess = false;
         this.errorMessage = error.error?.message || 'Une erreur est survenue lors de l\'inscription.';
       }
     });

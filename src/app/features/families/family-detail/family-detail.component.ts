@@ -92,7 +92,7 @@ export class FamilyDetailComponent implements OnInit {
 
     if (!this.family) return;
     
-    const confirmed = await this.dialogService.confirm(`Changer le rôle de ${member.fullName} en ${newRole} ?`);
+    const confirmed = await this.dialogService.confirm(`Changer le rôle de ${member.nickname || member.username} en ${newRole} ?`);
     if (!confirmed) return;
 
     this.familyService.updateMemberRole(this.family.id, member.id, newRole).subscribe({
@@ -111,7 +111,7 @@ export class FamilyDetailComponent implements OnInit {
     
     const confirmed = await this.dialogService.confirm({
       title: 'Retirer un membre',
-      message: `Retirer ${member.fullName} de la famille ?`,
+      message: `Retirer ${member.nickname || member.username} de la famille ?`,
       type: 'warning'
     });
     if (!confirmed) return;

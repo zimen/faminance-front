@@ -7,17 +7,20 @@ import { routes } from './app.routes';
 import { authInterceptor, errorInterceptor } from './core/interceptors';
 import { AuthService } from './core/services/auth.service';
 import { OnboardingService } from './core/services/onboarding.service';
+import { FamilyService } from './core/services/family.service';
 
 /**
- * Initialise la liaison entre AuthService et OnboardingService
+ * Initialise la liaison entre AuthService et OnboardingService/FamilyService
  * Évite la dépendance circulaire en configurant la relation au démarrage
  */
 function initializeAppServices(
   authService: AuthService,
-  onboardingService: OnboardingService
+  onboardingService: OnboardingService,
+  familyService: FamilyService
 ): () => void {
   return () => {
     authService.setOnboardingService(onboardingService);
+    authService.setFamilyService(familyService);
   };
 }
 
@@ -31,7 +34,7 @@ export const appConfig: ApplicationConfig = {
     {
       provide: APP_INITIALIZER,
       useFactory: initializeAppServices,
-      deps: [AuthService, OnboardingService],
+      deps: [AuthService, OnboardingService, FamilyService],
       multi: true
     }
   ]

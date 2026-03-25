@@ -1,6 +1,12 @@
 <div class="dashboard-container">
+  <!-- Chargement initial de la famille -->
+  <div *ngIf="loadingFamily" class="initial-loading">
+    <div class="spinner-large"></div>
+    <p>Chargement de vos données...</p>
+  </div>
+
   <!-- Header avec contexte famille -->
-  <div class="header">
+  <div class="header" *ngIf="!loadingFamily">
     <div class="family-context" *ngIf="currentFamily">
       <div class="family-info">
         <div class="family-avatar" [style.background]="'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'">
@@ -22,7 +28,7 @@
   </div>
 
   <!-- Skeleton Loader -->
-  <div *ngIf="loading" class="loading-skeleton">
+  <div *ngIf="!loadingFamily && loading" class="loading-skeleton">
     <div class="skeleton-cards">
       <div class="skeleton-card"></div>
       <div class="skeleton-card"></div>
