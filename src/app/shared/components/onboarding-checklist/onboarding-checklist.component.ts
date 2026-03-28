@@ -138,7 +138,7 @@ export class OnboardingChecklistComponent implements OnInit {
     } else if (percentage >= 20) {
       return 'Bon début ! Poursuivez pour profiter pleinement de l\'application. 🚀';
     } else {
-      return 'Commencez par compléter ces étapes pour tirer le meilleur parti de Family Finance. ✨';
+      return 'Commencez par compléter ces étapes pour tirer le meilleur parti de Faminance. ✨';
     }
   }
 }

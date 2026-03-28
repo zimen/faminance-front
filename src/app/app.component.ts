@@ -14,7 +14,7 @@ import { User } from './core/models';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
-  title = 'Family Finance';
+  title = 'Faminance';
   currentUser: User | null = null;
 
   constructor(

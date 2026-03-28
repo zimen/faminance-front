@@ -656,7 +656,7 @@ public class OpenApiConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
             .info(new Info()
-                .title("Family Finance API")
+                .title("Faminance API")
                 .version("1.0")
                 .description("""
                     API de gestion financière familiale

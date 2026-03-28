@@ -2,7 +2,7 @@
 
 ## Vue d'ensemble
 
-Le système d'onboarding de Family Finance dispose d'un mécanisme complet de **reprise automatique** et de **synchronisation avec le backend** pour garantir une expérience utilisateur fluide même en cas d'interruption.
+Le système d'onboarding de Faminance dispose d'un mécanisme complet de **reprise automatique** et de **synchronisation avec le backend** pour garantir une expérience utilisateur fluide même en cas d'interruption.
 
 ## 🔄 Fonctionnalités de reprise
 

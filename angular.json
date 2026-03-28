@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "family-finance-frontend": {
+    "faminance-frontend": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -13,7 +13,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
-            "outputPath": "dist/family-finance-frontend",
+            "outputPath": "dist/faminance-frontend",
             "index": "src/index.html",
             "main": "src/main.ts",
             "polyfills": [
@@ -66,10 +66,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "family-finance-frontend:build:production"
+              "buildTarget": "faminance-frontend:build:production"
             },
             "development": {
-              "buildTarget": "family-finance-frontend:build:development"
+              "buildTarget": "faminance-frontend:build:development"
             }
           },
           "defaultConfiguration": "development"

@@ -3,7 +3,7 @@
   # Commande de build
   command = "npm run build"
   # Dossier de sortie
-  publish = "dist/family-finance-frontend"
+  publish = "dist/faminance-frontend"
 
 # Redirection pour le routage côté client
 [[redirects]]
