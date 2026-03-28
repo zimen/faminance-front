@@ -172,8 +172,8 @@ export const routes: Routes = [
       { path: 'families/create', component: FamilyCreateComponent },
       { path: 'families/:id', component: FamilyDetailComponent },
 
-      // Invitations
-      { path: 'invitations', component: InvitationListComponent },
+      // Invitations - Redirect to family invitations page
+      { path: 'invitations', redirectTo: '/family/invitations', pathMatch: 'full' },
       { 
         path: 'invitations/send', 
         component: InvitationSendComponent,
